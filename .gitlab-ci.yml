@@ -94,8 +94,8 @@ deploy:
   needs: [build, migrate]
   before_script: *before_gcloud_and_docker
   script: |
-    git fetch origin master
-    if git merge-base --is-ancestor "$CI_COMMIT_SHA" origin/master; then
+    git fetch origin main
+    if git merge-base --is-ancestor "$CI_COMMIT_SHA" origin/main; then
       gcloud run deploy "${CLOUD_RUN_SERVICE}" \
         --region "$GCP_REGION" \
         --platform managed \
@@ -104,7 +104,7 @@ deploy:
         --allow-unauthenticated \
         --quiet
     else
-      echo "Tag is not from master, skipping deploy."
+      echo "Tag is not from main, skipping deploy."
       exit 1
     fi
   rules:
