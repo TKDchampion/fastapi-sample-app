@@ -2,8 +2,8 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, HttpUrl
 
 
-class AuthLoginRequestDTO(BaseModel):
-    access_token: str
+class GoogleAuthCodeDTO(BaseModel):
+    code: str
 
 
 class AuthLoginResponseDTO(BaseModel):
