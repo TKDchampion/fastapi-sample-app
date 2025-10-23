@@ -15,6 +15,7 @@ class AuthLoginResponseDTO(BaseModel):
     email: EmailStr
     email_verified: bool
     hd: Optional[str] = None
+    token: str
 
     class Config:
         from_attributes = True

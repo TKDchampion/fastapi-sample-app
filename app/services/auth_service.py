@@ -2,6 +2,7 @@ import logging
 import os
 from fastapi import HTTPException
 import httpx
+from app.services import jwt_service
 from app.services.base_http_service import BaseHTTPService
 
 
@@ -78,5 +79,6 @@ class AuthService(BaseHTTPService):
     async def authenticate_with_code(self, code: str) -> dict:
         tokens = await self.exchange_code_for_token(code)
         user = await self.google_auth(tokens["access_token"])
+        token = jwt_service.create_access_token(data={**user})
 
-        return user
+        return {**user, "token": token}

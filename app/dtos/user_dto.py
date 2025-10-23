@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
 
-class UserCreate(BaseModel):
+class UserCreateDTO(BaseModel):
     name: str
     email: str
 
 
-class UserRead(BaseModel):
+class UserReadDTO(BaseModel):
     id: int
     name: str
     email: str
