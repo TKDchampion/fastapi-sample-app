@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/login", response_model=AuthLoginResponseDTO)
-async def login(
+@router.post("/google_login", response_model=AuthLoginResponseDTO)
+async def google_login(
     request_dto: GoogleAuthCodeDTO,
     service: AuthService = Depends(AuthService),
 ):

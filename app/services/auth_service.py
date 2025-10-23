@@ -34,6 +34,7 @@ class AuthService(BaseHTTPService):
                 path="token",
                 payload=data,
                 override_base_url=self.token_base_url,
+                extra_headers={"content-type": "application/x-www-form-urlencoded"},
             )
         except httpx.HTTPStatusError as exc:
             logger.error(
@@ -46,6 +47,14 @@ class AuthService(BaseHTTPService):
                     "msg": "Failed to exchange code for token",
                 },
             )
+
+    def prepare_request(self, payload: dict, headers: dict) -> tuple[dict, dict]:
+        """
+        Override BaseHTTPService.prepare_request for Google's x-www-form-urlencoded requirement.
+        """
+        if headers.get("content-type") == "application/x-www-form-urlencoded":
+            return {"data": payload}, headers
+        return super().prepare_request(payload, headers)
 
     async def google_auth(self, access_token: str) -> dict:
         """
@@ -70,4 +79,4 @@ class AuthService(BaseHTTPService):
         tokens = await self.exchange_code_for_token(code)
         user = await self.google_auth(tokens["access_token"])
 
-        return {"google_user": user}
+        return user
