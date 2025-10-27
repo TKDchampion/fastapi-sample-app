@@ -15,7 +15,7 @@ async def google_login(
     service: AuthService = Depends(AuthService),
 ):
     try:
-        return await service.authenticate_with_code(request_dto.code)
+        return await service.authenticate_with_code(request_dto)
     except Exception as e:
         logger.warning(f"AuthService failed: {e.detail}")
         detail = e.detail if isinstance(e.detail, dict) else {"msg": str(e.detail)}

@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, HttpUrl
 
 class GoogleAuthCodeDTO(BaseModel):
     code: str
+    redirect_uri: HttpUrl
 
 
 class AuthLoginResponseDTO(BaseModel):

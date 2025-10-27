@@ -2,6 +2,7 @@ import logging
 import os
 from fastapi import HTTPException
 import httpx
+from app.dtos.auth_dto import GoogleAuthCodeDTO
 from app.services import jwt_service
 from app.services.base_http_service import BaseHTTPService
 
@@ -22,12 +23,12 @@ class AuthService(BaseHTTPService):
         )
         self.token_base_url = "https://oauth2.googleapis.com"
 
-    async def exchange_code_for_token(self, code: str) -> dict:
+    async def exchange_code_for_token(self, dto: GoogleAuthCodeDTO) -> dict:
         data = {
-            "code": code,
+            "code": dto.code,
             "client_id": os.getenv("GOOGLE_CLIENT_ID"),
             "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-            "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
+            "redirect_uri": dto.redirect_uri,
             "grant_type": "authorization_code",
         }
         try:
