@@ -55,6 +55,9 @@ pip install -r requirements.txt
 # Edit .env:
 # DATABASE_URL=postgresql://user:password@localhost:5432/your_db
 
+# Update migration version
+# alembic revision --autogenerate -m "update models"
+
 # 5. Run migrations
 alembic upgrade head
 
