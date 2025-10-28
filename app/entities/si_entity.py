@@ -21,13 +21,13 @@ class SIEntity(Base):
         server_default=func.now(),
     )
 
-    organizations: Mapped[list["Organization"]] = relationship(
-        "Organization", back_populates="si"
+    organizations: Mapped[list["OrganizationEntity"]] = relationship(
+        "OrganizationEntity", back_populates="si"
     )
-    users: Mapped[list["User"]] = relationship("User", back_populates="si")
+    users: Mapped[list["UserEntity"]] = relationship("UserEntity", back_populates="si")
 
-    si_permission_users: Mapped[list["User"]] = relationship(
-        "User",
+    si_permission_users: Mapped[list["UserEntity"]] = relationship(
+        "UserEntity",
         secondary="user_si_permissions",
         back_populates="si_permissions",
     )

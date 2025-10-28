@@ -22,8 +22,8 @@ class PermissionEntity(Base):
         server_default=func.now(),
     )
 
-    roles: Mapped[list["Role"]] = relationship(
-        "Role",
+    roles: Mapped[list["RoleEntity"]] = relationship(
+        "RoleEntity",
         secondary=role_permissions,
         back_populates="permissions",
     )

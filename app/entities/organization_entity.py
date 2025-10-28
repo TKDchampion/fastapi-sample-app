@@ -24,12 +24,16 @@ class OrganizationEntity(Base):
         server_default=func.now(),
     )
 
-    si: Mapped["SI"] = relationship("SI", back_populates="organizations")
-    roles: Mapped[list["Role"]] = relationship("Role", back_populates="organization")
-    users: Mapped[list["User"]] = relationship("User", back_populates="organization")
+    si: Mapped["SIEntity"] = relationship("SIEntity", back_populates="organizations")
+    roles: Mapped[list["RoleEntity"]] = relationship(
+        "RoleEntity", back_populates="organization"
+    )
+    users: Mapped[list["UserEntity"]] = relationship(
+        "UserEntity", back_populates="organization"
+    )
 
-    org_permission_users: Mapped[list["User"]] = relationship(
-        "User",
+    org_permission_users: Mapped[list["UserEntity"]] = relationship(
+        "UserEntity",
         secondary="user_org_permissions",
         back_populates="org_permissions",
     )

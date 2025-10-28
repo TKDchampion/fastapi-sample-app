@@ -9,6 +9,10 @@ from app.entities.associations_entity import (
     user_org_permissions,
 )
 
+# from app.entities.role_entity import RoleEntity
+# from app.entities.si_entity import SIEntity
+# from app.entities.organization_entity import OrganizationEntity
+
 
 class UserEntity(Base):
     __tablename__ = "users"
@@ -33,25 +37,25 @@ class UserEntity(Base):
         server_default=func.now(),
     )
 
-    si: Mapped["SI"] = relationship("SI", back_populates="users")
-    organization: Mapped["Organization"] = relationship(
-        "Organization", back_populates="users"
+    si: Mapped["SIEntity"] = relationship("SIEntity", back_populates="users")
+    organization: Mapped["OrganizationEntity"] = relationship(
+        "OrganizationEntity", back_populates="users"
     )
 
-    roles: Mapped[list["Role"]] = relationship(
-        "Role",
+    roles: Mapped[list["RoleEntity"]] = relationship(
+        "RoleEntity",
         secondary=user_roles,
         back_populates="users",
     )
 
-    si_permissions: Mapped[list["SI"]] = relationship(
-        "SI",
+    si_permissions: Mapped[list["SIEntity"]] = relationship(
+        "SIEntity",
         secondary=user_si_permissions,
         back_populates="si_permission_users",
     )
 
-    org_permissions: Mapped[list["Organization"]] = relationship(
-        "Organization",
+    org_permissions: Mapped[list["OrganizationEntity"]] = relationship(
+        "OrganizationEntity",
         secondary=user_org_permissions,
         back_populates="org_permission_users",
     )
