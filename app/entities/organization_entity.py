@@ -28,12 +28,9 @@ class OrganizationEntity(Base):
     roles: Mapped[list["RoleEntity"]] = relationship(
         "RoleEntity", back_populates="organization"
     )
-    users: Mapped[list["UserEntity"]] = relationship(
-        "UserEntity", back_populates="organization"
-    )
 
-    org_permission_users: Mapped[list["UserEntity"]] = relationship(
+    org_users: Mapped[list["UserEntity"]] = relationship(
         "UserEntity",
-        secondary="user_org_permissions",
-        back_populates="org_permissions",
+        secondary="user_org",
+        back_populates="org",
     )

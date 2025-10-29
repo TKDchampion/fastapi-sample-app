@@ -24,10 +24,9 @@ class SIEntity(Base):
     organizations: Mapped[list["OrganizationEntity"]] = relationship(
         "OrganizationEntity", back_populates="si"
     )
-    users: Mapped[list["UserEntity"]] = relationship("UserEntity", back_populates="si")
 
-    si_permission_users: Mapped[list["UserEntity"]] = relationship(
+    si_users: Mapped[list["UserEntity"]] = relationship(
         "UserEntity",
-        secondary="user_si_permissions",
-        back_populates="si_permissions",
+        secondary="user_si",
+        back_populates="si",
     )
