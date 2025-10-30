@@ -1,12 +1,14 @@
-import enum
-from sqlalchemy import Enum, Integer, PrimaryKeyConstraint, Table, Column, ForeignKey
+from sqlalchemy import (
+    CheckConstraint,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    Column,
+    ForeignKey,
+    UniqueConstraint,
+)
 from app.database import Base
-
-
-class ScopeType(enum.Enum):
-    system = "system"
-    si = "si"
-    org = "org"
 
 
 role_permissions = Table(
@@ -26,9 +28,11 @@ user_roles = Table(
     Base.metadata,
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    Column("scope_type", Enum(ScopeType), nullable=False),
+    Column("scope_type", String, nullable=False),
     Column("scope_id", Integer, nullable=False),
-    PrimaryKeyConstraint("user_id", "role_id", "scope_type", "scope_id"),
+    PrimaryKeyConstraint("user_id", "role_id"),
+    UniqueConstraint("user_id", "role_id", "scope_type", "scope_id"),
+    CheckConstraint("scope_type IN ('si', 'org', 'super')"),
 )
 
 user_si = Table(
