@@ -111,41 +111,8 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
         )
         si_map[si_obj.id] = si_entry
 
-    # Step 4.5 處理 Org Scope (直接 Org Owner)
-    org_scope_roles = [ur for ur in user_roles if ur.scope_type == "org"]
-
-    for ur in org_scope_roles:
-        org_obj = db.scalar(
-            select(OrganizationEntity).where(OrganizationEntity.id == ur.scope_id)
-        )
-        if not org_obj:
-            continue
-
-        si_obj = db.scalar(select(SIEntity).where(SIEntity.id == org_obj.si_id))
-
-        # 如果 SI entry 不存在先建
-        if si_obj.id not in si_map:
-            si_map[si_obj.id] = {
-                "level": "si",
-                "id": si_obj.id,
-                "name": si_obj.name,
-                "isActive": False,
-                "accessibleNode": [],
-            }
-
-        si_map[si_obj.id]["accessibleNode"].append(
-            {
-                "level": "org",
-                "id": org_obj.id,
-                "name": org_obj.name,
-                "role": "owner",
-                "isActive": ur.isActiveOrg if ur.isActiveOrg is not None else False,
-                "permissions": permissions_all,
-            }
-        )
-
     # Step 5. 處理 Org 層級
-    org_roles = [ur for ur in user_roles if ur.scope_type == "role"]
+    org_roles = [ur for ur in user_roles if ur.scope_type == "org"]
 
     for ur in org_roles:
         org_obj = db.scalar(

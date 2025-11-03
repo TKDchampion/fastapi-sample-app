@@ -34,7 +34,7 @@ user_roles = Table(
     Column("isActiveOrg", Boolean, nullable=True, default=None),
     PrimaryKeyConstraint("user_id", "role_id"),
     UniqueConstraint("user_id", "role_id", "scope_type", "scope_id", "isActiveOrg"),
-    CheckConstraint("scope_type IN ('super', 'si', 'org', 'role')"),
+    CheckConstraint("scope_type IN ('super', 'si', 'org')"),
 )
 
 user_si = Table(
