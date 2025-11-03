@@ -43,14 +43,19 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
-    result = {"level": "super", "permission": False, "accessibleNode": []}
+    result = {"level": "super", "isActive": False, "accessibleNode": []}
 
     # Step 3. super 層級
     has_super = any(ur.scope_type == "super" for ur in user_roles)
+    permissions_all = db.scalars(
+        select(PermissionEntity.name).where(PermissionEntity.name != None)
+    ).all()
+
     if has_super:
-        result["permission"] = True
+        result["isActive"] = True
 
         si_list = db.scalars(select(SIEntity)).all()
+        permissions = permissions_all
         for si_obj in si_list:
             orgs = db.scalars(
                 select(OrganizationEntity).where(OrganizationEntity.si_id == si_obj.id)
@@ -62,7 +67,8 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                     "id": org.id,
                     "name": org.name,
                     "role": "owner",
-                    "permissions": "all",
+                    "isActive": True,
+                    "permissions": permissions,
                 }
                 for org in orgs
             ]
@@ -72,7 +78,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                     "level": "si",
                     "id": si_obj.id,
                     "name": si_obj.name,
-                    "permission": True,
+                    "isActive": True,
                     "accessibleNode": org_nodes,
                 }
             )
@@ -99,14 +105,47 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                 "level": "si",
                 "id": si_obj.id,
                 "name": si_obj.name,
-                "permission": True,
+                "isActive": True,
                 "accessibleNode": [],
             },
         )
         si_map[si_obj.id] = si_entry
 
+    # Step 4.5 處理 Org Scope (直接 Org Owner)
+    org_scope_roles = [ur for ur in user_roles if ur.scope_type == "org"]
+
+    for ur in org_scope_roles:
+        org_obj = db.scalar(
+            select(OrganizationEntity).where(OrganizationEntity.id == ur.scope_id)
+        )
+        if not org_obj:
+            continue
+
+        si_obj = db.scalar(select(SIEntity).where(SIEntity.id == org_obj.si_id))
+
+        # 如果 SI entry 不存在先建
+        if si_obj.id not in si_map:
+            si_map[si_obj.id] = {
+                "level": "si",
+                "id": si_obj.id,
+                "name": si_obj.name,
+                "isActive": False,
+                "accessibleNode": [],
+            }
+
+        si_map[si_obj.id]["accessibleNode"].append(
+            {
+                "level": "org",
+                "id": org_obj.id,
+                "name": org_obj.name,
+                "role": "owner",
+                "isActive": ur.isActiveOrg if ur.isActiveOrg is not None else False,
+                "permissions": permissions_all,
+            }
+        )
+
     # Step 5. 處理 Org 層級
-    org_roles = [ur for ur in user_roles if ur.scope_type == "org"]
+    org_roles = [ur for ur in user_roles if ur.scope_type == "role"]
 
     for ur in org_roles:
         org_obj = db.scalar(
@@ -125,7 +164,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
 
         # 若該 org 所屬 si 已經在 si_ids_with_admin，則 override 成 all
         if si_obj.id in si_ids_with_admin:
-            permissions = "all"
+            permissions = permissions_all
 
         # 加入對應 SI node
         if si_obj.id not in si_map:
@@ -133,7 +172,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                 "level": "si",
                 "id": si_obj.id,
                 "name": si_obj.name,
-                "permission": False,
+                "isActive": False,
                 "accessibleNode": [],
             }
 
@@ -143,6 +182,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                 "id": org_obj.id,
                 "name": org_obj.name,
                 "role": role_obj.name,
+                "isActive": ur.isActiveOrg if ur.isActiveOrg is not None else False,
                 "permissions": permissions,
             }
         )
@@ -159,7 +199,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                 "level": "si",
                 "id": si_obj.id,
                 "name": si_obj.name,
-                "permission": True,
+                "isActive": True,
                 "accessibleNode": [],
             }
             si_map[si_id] = si_entry
@@ -173,7 +213,8 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                         "id": org.id,
                         "name": org.name,
                         "role": "owner",
-                        "permissions": "all",
+                        "isActive": True,
+                        "permissions": permissions_all,
                     }
                 )
 
