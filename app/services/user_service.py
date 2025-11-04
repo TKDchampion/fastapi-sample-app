@@ -69,7 +69,7 @@ def build_for_user(db: Session, user_id: int) -> UserAccessTreeResponseDTO:
 
         tree = PermissionTreeDTO(isActive=True, accessibleNode=si_nodes)
         return UserAccessTreeResponseDTO(
-            user=UserReadDTO.from_entity(user), permissionTree=tree
+            user=UserReadDTO.model_validate(user), permissionTree=tree
         )
 
     # ---- aggregate by scope/role ----
