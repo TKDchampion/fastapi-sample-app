@@ -27,6 +27,19 @@ def create_user(user: UserCreateDTO, db: Session = Depends(get_db)):
     return user_service.add_user(db, user)
 
 
+@router.get("/{user_id}/access_tree", response_model=UserAccessTreeResponseDTO)
+def get_user_access_tree(
+    user_id: int, db: Session = Depends(get_db)
+) -> UserAccessTreeResponseDTO:
+    """
+    Refactored:
+    - ~3–6 SQL queries total, regardless of graph size
+    - No per-row .scalar() calls
+    - All joins batched
+    """
+    return user_service.build_for_user(db, user_id)
+
+
 @router.get("/{user_id}")
 def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
     # Step 1. 查 user 是否存在
