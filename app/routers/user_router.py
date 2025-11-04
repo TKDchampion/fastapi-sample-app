@@ -189,5 +189,5 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
     result["accessibleNode"] = list(si_map.values())
 
     return UserAccessTreeResponseDTO(
-        user=UserReadDTO.model_validate(user), permissionInfo=result
+        user=UserReadDTO.model_validate(user), permissionTree=result
     )

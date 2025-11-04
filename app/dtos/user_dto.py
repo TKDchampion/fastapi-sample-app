@@ -18,4 +18,4 @@ class UserReadDTO(BaseModel):
 
 class UserAccessTreeResponseDTO(BaseModel):
     user: UserReadDTO
-    permissionInfo: dict
+    permissionTree: dict
