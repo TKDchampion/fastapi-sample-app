@@ -260,4 +260,4 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
     # Step 7. 排序 (optional)
     result["accessibleNode"] = list(si_map.values())
 
-    return result
+    return {"user": UserReadDTO.model_validate(user), "permissionTree": result}
