@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services import user_service
-from app.dtos.user_dto import UserCreateDTO, UserReadDTO
+from app.dtos.user_dto import UserAccessTreeResponseDTO, UserCreateDTO, UserReadDTO
 from typing import List
 
 # TODO: 待移除
@@ -187,4 +187,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
 
     # Step 7. 整合結果
     result["accessibleNode"] = list(si_map.values())
-    return result
+
+    return UserAccessTreeResponseDTO(
+        user=UserReadDTO.model_validate(user), permissionInfo=result
+    )

@@ -10,6 +10,12 @@ class UserReadDTO(BaseModel):
     id: int
     name: str
     email: str
+    picture: str | None = None
 
     class Config:
         from_attributes = True
+
+
+class UserAccessTreeResponseDTO(BaseModel):
+    user: UserReadDTO
+    permissionInfo: dict
