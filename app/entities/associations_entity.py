@@ -31,9 +31,9 @@ user_roles = Table(
     Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
     Column("scope_type", String, nullable=False),
     Column("scope_id", Integer, nullable=False),
-    Column("isActiveOrg", Boolean, nullable=True, default=None),
+    Column("isActive", Boolean, nullable=True, default=None),
     PrimaryKeyConstraint("user_id", "role_id"),
-    UniqueConstraint("user_id", "role_id", "scope_type", "scope_id", "isActiveOrg"),
+    UniqueConstraint("user_id", "role_id", "scope_type", "scope_id", "isActive"),
     CheckConstraint("scope_type IN ('super', 'si', 'org')"),
 )
 

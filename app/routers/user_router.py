@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -97,20 +98,30 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
         .mappings()
         .all()
     )
+    permissions_all = db.execute(
+        select(PermissionEntity.name, PermissionEntity.type)
+    ).all()
 
-    result = {"level": "super", "isActive": False, "accessibleNode": []}
+    perms_by_type = defaultdict(list)
+    for name, type in permissions_all:
+        perms_by_type[type].append(name)
+
+    result = {
+        "level": "super",
+        "isActive": False,
+        "permissions": [],
+        "accessibleNode": [],
+    }
 
     # Step 3. super 層級
     has_super = any(ur.scope_type == "super" for ur in user_roles)
-    permissions_all = db.scalars(
-        select(PermissionEntity.name).where(PermissionEntity.name != None)
-    ).all()
 
     if has_super:
         result["isActive"] = True
+        result["permissions"] = perms_by_type["super"]
 
         si_list = db.scalars(select(SIEntity)).all()
-        permissions = permissions_all
+
         for si_obj in si_list:
             orgs = db.scalars(
                 select(OrganizationEntity).where(OrganizationEntity.si_id == si_obj.id)
@@ -123,7 +134,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                     "name": org.name,
                     "role": "owner",
                     "isActive": True,
-                    "permissions": permissions,
+                    "permissions": perms_by_type["org"],
                 }
                 for org in orgs
             ]
@@ -134,6 +145,7 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                     "id": si_obj.id,
                     "name": si_obj.name,
                     "isActive": True,
+                    "permissions": perms_by_type["si"],
                     "accessibleNode": org_nodes,
                 }
             )
@@ -144,27 +156,20 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
     si_roles = [ur for ur in user_roles if ur.scope_type == "si"]
     si_map = {}
 
-    # 先紀錄有哪些 SI 層級
-    si_ids_with_admin = set()
-
     for ur in si_roles:
         si_obj = db.scalar(select(SIEntity).where(SIEntity.id == ur.scope_id))
         if not si_obj:
             continue
 
-        si_ids_with_admin.add(si_obj.id)
-
-        si_entry = si_map.get(
-            si_obj.id,
-            {
-                "level": "si",
-                "id": si_obj.id,
-                "name": si_obj.name,
-                "isActive": True,
-                "accessibleNode": [],
-            },
-        )
-        si_map[si_obj.id] = si_entry
+        si_map[si_obj.id] = {
+            "level": "si",
+            "id": si_obj.id,
+            "name": si_obj.name,
+            "isActive": ur.isActive if ur.isActive is not None else False,
+            "role": "owner",
+            "permissions": perms_by_type["si"],  # SI 全權限
+            "accessibleNode": [],  # orgs later fill
+        }
 
     # Step 5. 處理 Org 層級
     org_roles = [ur for ur in user_roles if ur.scope_type == "org"]
@@ -173,28 +178,46 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
         org_obj = db.scalar(
             select(OrganizationEntity).where(OrganizationEntity.id == ur.scope_id)
         )
-        role_obj = db.scalar(select(RoleEntity).where(RoleEntity.id == ur.role_id))
+        if not org_obj:
+            continue
+
         si_obj = db.scalar(select(SIEntity).where(SIEntity.id == org_obj.si_id))
 
-        # 查角色權限
+        # 查 Org role 名稱
+        role_obj = db.scalar(select(RoleEntity).where(RoleEntity.id == ur.role_id))
+
+        # 查 Org 角色的權限
         permission_rows = db.execute(
             select(PermissionEntity.name)
             .join(RoleEntity.permissions)
             .where(RoleEntity.id == ur.role_id)
-        )
-        permissions = [r[0] for r in permission_rows]
+        ).all()
+        org_permissions = [r[0] for r in permission_rows]
 
-        # 若該 org 所屬 si 已經在 si_ids_with_admin，則 override 成 all
-        if si_obj.id in si_ids_with_admin:
-            permissions = permissions_all
+        # 若此 SI 已存在於 si_map → SI 覆蓋 ORG（全部 org full perm）
+        if si_obj.id in si_map:
+            # 這個 org 也要進 accessibleNode
+            si_map[si_obj.id]["accessibleNode"].append(
+                {
+                    "level": "org",
+                    "id": org_obj.id,
+                    "name": org_obj.name,
+                    "role": "owner",  # 因 SI override
+                    "isActive": True,
+                    "permissions": perms_by_type["org"],  # full org perm
+                }
+            )
+            continue
 
-        # 加入對應 SI node
+        # 如果沒有 SI 權限 → 只擁有個別 ORG 權限
         if si_obj.id not in si_map:
             si_map[si_obj.id] = {
                 "level": "si",
                 "id": si_obj.id,
                 "name": si_obj.name,
-                "isActive": False,
+                "isActive": False,  # SI 沒權限
+                "role": None,
+                "permissions": [],
                 "accessibleNode": [],
             }
 
@@ -204,29 +227,23 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                 "id": org_obj.id,
                 "name": org_obj.name,
                 "role": role_obj.name,
-                "isActive": ur.isActiveOrg if ur.isActiveOrg is not None else False,
-                "permissions": permissions,
+                "isActive": ur.isActive if ur.isActive is not None else False,
+                "permissions": org_permissions,
             }
         )
 
-    # Step 6. 把有 SI 權限的全部 org 一起補進來
-    for si_id in si_ids_with_admin:
+    # Step 6. SI 權限 → 自動補齊所有 org (避免漏 org)
+    for si_id, si_entry in si_map.items():
+        if si_entry["permissions"] != perms_by_type["si"]:
+            continue  # skip: 不是 SI 權限
+
         orgs = db.scalars(
             select(OrganizationEntity).where(OrganizationEntity.si_id == si_id)
         ).all()
-        si_entry = si_map.get(si_id)
-        if not si_entry:
-            si_obj = db.scalar(select(SIEntity).where(SIEntity.id == si_id))
-            si_entry = {
-                "level": "si",
-                "id": si_obj.id,
-                "name": si_obj.name,
-                "isActive": True,
-                "accessibleNode": [],
-            }
-            si_map[si_id] = si_entry
 
-        existing_org_ids = {org_node["id"] for org_node in si_entry["accessibleNode"]}
+        # 既有 org ids
+        existing_org_ids = {o["id"] for o in si_entry["accessibleNode"]}
+
         for org in orgs:
             if org.id not in existing_org_ids:
                 si_entry["accessibleNode"].append(
@@ -236,10 +253,11 @@ def get_user_access_tree(user_id: int, db: Session = Depends(get_db)):
                         "name": org.name,
                         "role": "owner",
                         "isActive": True,
-                        "permissions": permissions_all,
+                        "permissions": perms_by_type["org"],  # full org perms
                     }
                 )
 
-    # Step 7. 整合結果
+    # Step 7. 排序 (optional)
     result["accessibleNode"] = list(si_map.values())
+
     return result
