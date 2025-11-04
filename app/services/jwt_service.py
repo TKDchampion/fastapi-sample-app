@@ -37,7 +37,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def decode_access_token(token: str, db: Session):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
         email = (
             payload.get("member", {}).get("email")
             or payload.get("email")
@@ -56,13 +55,7 @@ def decode_access_token(token: str, db: Session):
                 detail={"msg": "User not found", "type": "token_invalid"},
             )
 
-        info = {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-        }
-        # should be returned user info from DB
-        return UserReadDTO(**info)
+        return UserReadDTO.model_validate(user, from_attributes=True)
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(

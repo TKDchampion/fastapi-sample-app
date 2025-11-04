@@ -1,7 +1,6 @@
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 from app.routers import auth_router, user_router
-
-# from app.database import Base, engine
 from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -9,6 +8,36 @@ app = FastAPI(
     description="Sample app with clean architecture",
     version="1.0.0",
 )
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # Add Bearer token security scheme
+    openapi_schema["components"]["securitySchemes"] = {
+        "Bearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+
+    # Set Bearer as default security for all endpoints
+    openapi_schema["security"] = [{"Bearer": []}]
+    app.openapi_schema = openapi_schema
+
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 app.add_middleware(
     CORSMiddleware,

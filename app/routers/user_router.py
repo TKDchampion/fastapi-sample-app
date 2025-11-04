@@ -1,35 +1,40 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services import user_service
 from app.dtos.user_dto import UserAccessTreeResponseDTO, UserCreateDTO, UserReadDTO
 from typing import List
+from app.services.jwt_service import token_required
 
-# TODO: 待移除
-from sqlalchemy import select
-from app.entities.associations_entity import user_roles as user_roles_table
-from app.entities.organization_entity import OrganizationEntity
-from app.entities.si_entity import SIEntity
-from app.entities.permission_entity import PermissionEntity
-from app.entities.role_entity import RoleEntity
-from app.entities.user_entity import UserEntity
 
-router = APIRouter(prefix="/users", tags=["Users"])
+logger = logging.getLogger(__name__)
+
+
+router = APIRouter(prefix="/user", tags=["User"])
 
 
 @router.get("", response_model=List[UserReadDTO])
-def get_users(db: Session = Depends(get_db)):
+def get_users(
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
     return user_service.get_users(db)
 
 
 @router.post("", response_model=UserReadDTO)
-def create_user(user: UserCreateDTO, db: Session = Depends(get_db)):
+def create_user(
+    user: UserCreateDTO,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
     return user_service.add_user(db, user)
 
 
-@router.get("/{user_id}", response_model=UserAccessTreeResponseDTO)
+@router.get("/info_access", response_model=UserAccessTreeResponseDTO)
 def get_user_access_tree(
-    user_id: int, db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
 ) -> UserAccessTreeResponseDTO:
     """
     Refactored:
@@ -37,4 +42,11 @@ def get_user_access_tree(
     - No per-row .scalar() calls
     - All joins batched
     """
-    return user_service.build_for_user(db, user_id)
+    try:
+        return user_service.build_for_user(db, user_info.id)
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"type": "error", "msg": e.detail.get("msg", "Unknown error")},
+        )
