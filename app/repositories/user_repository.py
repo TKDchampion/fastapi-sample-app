@@ -1,5 +1,5 @@
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, case, literal, select
+from sqlalchemy.orm import Session, aliased
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.permission_entity import PermissionEntity
 from app.entities.role_entity import RoleEntity
@@ -32,14 +32,23 @@ def get_user(db: Session, user_id: int):
 
 
 def get_user_roles(db: Session, user_id: int):
-    return db.execute(
+    SI_scope = aliased(SIEntity, name="si_scope")
+    SI_of_org = aliased(SIEntity, name="si_of_org")
+
+    q = (
         select(
             user_roles_table.c.scope_type,
             user_roles_table.c.scope_id,
             user_roles_table.c.role_id,
             user_roles_table.c.isActive,
-            SIEntity.id.label("si_id"),
-            SIEntity.name.label("si_name"),
+            case(
+                (user_roles_table.c.scope_type == literal("si"), SI_scope.id),
+                else_=SI_of_org.id,
+            ).label("si_id"),
+            case(
+                (user_roles_table.c.scope_type == literal("si"), SI_scope.name),
+                else_=SI_of_org.name,
+            ).label("si_name"),
             OrganizationEntity.id.label("org_id"),
             OrganizationEntity.name.label("org_name"),
             RoleEntity.name.label("role_name"),
@@ -48,12 +57,34 @@ def get_user_roles(db: Session, user_id: int):
         )
         .join(RoleEntity, RoleEntity.id == user_roles_table.c.role_id)
         .join(RoleEntity.permissions)
-        .outerjoin(SIEntity, SIEntity.id == user_roles_table.c.scope_id)
+        # scope_type = 'si' → 直接用 scope_id 對 si
         .outerjoin(
-            OrganizationEntity, OrganizationEntity.id == user_roles_table.c.scope_id
+            SI_scope,
+            and_(
+                user_roles_table.c.scope_type == literal("si"),
+                SI_scope.id == user_roles_table.c.scope_id,
+            ),
+        )
+        # scope_type = 'org' → 先對 org.id = scope_id
+        .outerjoin(
+            OrganizationEntity,
+            and_(
+                user_roles_table.c.scope_type == literal("org"),
+                OrganizationEntity.id == user_roles_table.c.scope_id,
+            ),
+        )
+        # 再把 org.si_id 連到另一個 si 別名
+        .outerjoin(
+            SI_of_org,
+            and_(
+                user_roles_table.c.scope_type == literal("org"),
+                OrganizationEntity.si_id == SI_of_org.id,
+            ),
         )
         .where(user_roles_table.c.user_id == user_id)
-    ).all()
+    )
+    rows = db.execute(q).all()
+    return rows
 
 
 def get_permissions(db: Session):
