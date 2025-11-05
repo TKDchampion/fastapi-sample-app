@@ -31,25 +31,17 @@ class SINodeDTO(BaseModel):
     id: int
     name: str
     isActive: bool
+    permissions: List[str]
     accessibleNode: List[OrgNodeDTO]
 
 
 class PermissionTreeDTO(BaseModel):
     level: str = Field(default="super")
     isActive: bool
+    permissions: List[str]
     accessibleNode: List[SINodeDTO]
 
 
 class UserAccessTreeResponseDTO(BaseModel):
     user: UserReadDTO
     permissionTree: PermissionTreeDTO
-
-
-class RoleRow(BaseModel):
-    # Flattened row from joined user_roles + role + permission (+ org for name lookup)
-    scope_type: str
-    scope_id: int
-    isActiveOrg: Optional[bool]
-    role_id: int
-    role_name: str
-    permission_name: Optional[str]
