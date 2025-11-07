@@ -11,7 +11,7 @@ def build_si_map(roles, perms_by_type):
                 "logo": r.si_logo,
                 "isActive": bool(r.isActive),
                 "role": r.role_name,
-                "permissions": perms_by_type["si"],  # full si perms by role
+                "permissions": perms_by_type["si"],
                 "accessibleNode": [],
             }
 

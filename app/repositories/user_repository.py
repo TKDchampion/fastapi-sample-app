@@ -98,8 +98,8 @@ def get_all_orgs(db: Session):
         select(
             OrganizationEntity.id,
             OrganizationEntity.name,
-            OrganizationEntity.logo,
             OrganizationEntity.si_id,
+            OrganizationEntity.logo,
         )
     ).all()
 
