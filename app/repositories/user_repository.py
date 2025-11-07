@@ -51,6 +51,8 @@ def get_user_roles(db: Session, user_id: int):
             ).label("si_name"),
             OrganizationEntity.id.label("org_id"),
             OrganizationEntity.name.label("org_name"),
+            OrganizationEntity.logo.label("org_logo"),
+            SI_scope.logo.label("si_logo"),
             RoleEntity.name.label("role_name"),
             PermissionEntity.name.label("perm_name"),
             PermissionEntity.type.label("perm_type"),
@@ -93,14 +95,24 @@ def get_permissions(db: Session):
 
 def get_all_orgs(db: Session):
     return db.execute(
-        select(OrganizationEntity.id, OrganizationEntity.name, OrganizationEntity.si_id)
+        select(
+            OrganizationEntity.id,
+            OrganizationEntity.name,
+            OrganizationEntity.logo,
+            OrganizationEntity.si_id,
+        )
     ).all()
 
 
 def get_si_org_tree(db: Session):
     stmt = (
         select(
-            SIEntity.id, SIEntity.name, OrganizationEntity.id, OrganizationEntity.name
+            SIEntity.id,
+            SIEntity.name,
+            SIEntity.logo,
+            OrganizationEntity.id,
+            OrganizationEntity.name,
+            OrganizationEntity.logo,
         )
         .join(OrganizationEntity, OrganizationEntity.si_id == SIEntity.id, isouter=True)
         .order_by(SIEntity.id)

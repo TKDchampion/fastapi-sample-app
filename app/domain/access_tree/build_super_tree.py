@@ -8,10 +8,12 @@ def build_super_tree(user, perms_by_type, result, db):
 
     si_map = defaultdict(lambda: {"name": "", "orgs": []})
 
-    for si_id, si_name, org_id, org_name in rows:
+    for si_id, si_name, si_logo, org_id, org_name, org_logo in rows:
         si_map[si_id]["name"] = si_name
+        si_map[si_id]["logo"] = si_logo
+
         if org_id:
-            si_map[si_id]["orgs"].append((org_id, org_name))
+            si_map[si_id]["orgs"].append((org_id, org_name, org_logo))
 
     for sid, data in si_map.items():
         result["accessibleNode"].append(
@@ -20,6 +22,7 @@ def build_super_tree(user, perms_by_type, result, db):
                 "id": sid,
                 "name": data["name"],
                 "isActive": True,
+                "logo": data["logo"],
                 "permissions": perms_by_type["si"],
                 "accessibleNode": [
                     {
@@ -28,9 +31,10 @@ def build_super_tree(user, perms_by_type, result, db):
                         "name": oname,
                         "role": "owner",
                         "isActive": True,
+                        "logo": ologo,
                         "permissions": perms_by_type["org"],
                     }
-                    for oid, oname in data["orgs"]
+                    for oid, oname, ologo in data["orgs"]
                 ],
             }
         )

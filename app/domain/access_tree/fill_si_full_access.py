@@ -11,7 +11,7 @@ def fill_si_full_access(si_map: dict, perms_by_type, db):
 
     orgs_all = user_repository.get_all_orgs(db)
 
-    for oid, oname, sid_fk in orgs_all:
+    for oid, oname, sid_fk, ologo in orgs_all:
         if sid_fk in full_si_ids:
             exists = {o["id"] for o in si_map[sid_fk]["accessibleNode"]}
             if oid not in exists:
@@ -21,6 +21,7 @@ def fill_si_full_access(si_map: dict, perms_by_type, db):
                         "id": oid,
                         "name": oname,
                         "role": "owner",
+                        "logo": ologo,
                         "isActive": True,
                         "permissions": perms_by_type["org"],
                     }

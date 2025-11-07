@@ -36,10 +36,8 @@ user_roles = Table(
     PrimaryKeyConstraint("user_id", "role_id"),
     UniqueConstraint("user_id", "role_id", "scope_type", "scope_id", "isActive"),
     CheckConstraint("scope_type IN ('super', 'si', 'org')"),
-    __table_args__=(
-        Index("idx_user_roles_scope_type_scope_id", "scope_type", "scope_id"),
-        Index("idx_user_roles_user_id", "user_id"),
-    ),
+    Index("idx_user_roles_scope_type_scope_id", "scope_type", "scope_id"),
+    Index("idx_user_roles_user_id", "user_id"),
 )
 
 user_si = Table(

@@ -23,6 +23,7 @@ class OrgNodeDTO(BaseModel):
     name: str
     role: str
     isActive: bool
+    logo: str | None = None
     permissions: List[str]
 
 
@@ -31,6 +32,7 @@ class SINodeDTO(BaseModel):
     id: int
     name: str
     isActive: bool
+    logo: str | None = None
     permissions: List[str]
     accessibleNode: List[OrgNodeDTO]
 
