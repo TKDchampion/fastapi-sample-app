@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, outerjoin
 from app.database import get_db
 from app.services import user_service
-from app.dtos.user_dto import UserAccessTreeResponseDTO, UserCreateDTO, UserReadDTO
+from app.dtos.user_dto import (
+    UserAccessTreeResponseDTO,
+    UserCreateDTO,
+    UserReadDTO,
+    UserSIListResponseDTO,
+)
 from typing import List
 from app.services.jwt_service import token_required
 
@@ -47,10 +52,7 @@ def get_user_access_tree(
     user_info: UserReadDTO = Depends(token_required),
 ) -> UserAccessTreeResponseDTO:
     """
-    Refactored:
-    - ~3–6 SQL queries total, regardless of graph size
-    - No per-row .scalar() calls
-    - All joins batched
+    Get current user access tree
     """
     try:
         return user_service.get_user_access_tree(db, user_info.id)
@@ -75,6 +77,27 @@ def get_user_access_tree(
     """
     try:
         return user_service.get_user_access_tree(db, user_id)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Unknown error"},
+        )
+
+
+@router.get("/si_list", response_model=UserSIListResponseDTO)
+def get_user_si(
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> UserSIListResponseDTO:
+    """
+    Get current user SI
+    """
+    try:
+        return user_service.get_user_si(db, user_info.id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

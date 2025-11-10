@@ -5,10 +5,12 @@ from app.domain.access_tree.build_si_map import build_si_map
 from app.domain.access_tree.build_super_tree import build_super_tree
 from app.domain.access_tree.fill_si_full_access import fill_si_full_access
 from app.domain.access_tree.merge_org_permissions import merge_org_permissions
+from app.entities.si_entity import SIEntity
 from app.repositories import user_repository
 from app.dtos.user_dto import (
     UserCreateDTO,
-    UserReadDTO,
+    UserSIListItemDTO,
+    UserSIListResponseDTO,
 )
 
 
@@ -29,7 +31,7 @@ def get_user_access_tree(db: Session, user_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    roles = user_repository.get_user_roles(db, user_id)
+    roles = user_repository.get_user_roles_si_org_perm(db, user_id)
     perms = user_repository.get_permissions(db)
 
     perms_by_type = defaultdict(list)
@@ -60,3 +62,20 @@ def get_user_access_tree(db: Session, user_id: int):
         "user": user,
         "permissionTree": result,
     }
+
+
+def get_user_si(db: Session, user_id: int):
+    user = user_repository.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    roles = user_repository.get_user_roles(db, user_id)
+    has_super = any(r.scope_type == "super" for r in roles)
+
+    if has_super:
+        sis = user_repository.get_si_all(db)
+
+    sis = user_repository.get_si_user_roles(db, user_id)
+    items = [UserSIListItemDTO.model_validate(row) for row in sis]
+
+    return UserSIListResponseDTO(si=items)

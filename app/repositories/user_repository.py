@@ -32,6 +32,44 @@ def get_user(db: Session, user_id: int):
 
 
 def get_user_roles(db: Session, user_id: int):
+    return db.execute(
+        select(
+            user_roles_table.c.scope_type,
+            user_roles_table.c.scope_id,
+            user_roles_table.c.role_id,
+            user_roles_table.c.isActive,
+        ).where(user_roles_table.c.user_id == user_id)
+    ).all()
+
+
+def get_si_all(db: Session):
+    return db.execute(select(SIEntity)).scalars().all()
+
+
+def get_si_user_roles(db: Session, user_id: int):
+    q = (
+        select(
+            SIEntity.id,
+            SIEntity.name,
+            SIEntity.logo,
+            SIEntity.created_at,
+            SIEntity.updated_at,
+        )
+        .select_from(user_roles_table)
+        .join(
+            SIEntity,
+            and_(
+                user_roles_table.c.scope_type == literal("si"),
+                SIEntity.id == user_roles_table.c.scope_id,
+            ),
+        )
+        .where(user_roles_table.c.user_id == user_id)
+    )
+    rows = db.execute(q).mappings().all()
+    return rows
+
+
+def get_user_roles_si_org_perm(db: Session, user_id: int):
     SI_scope = aliased(SIEntity, name="si_scope")
     SI_of_org = aliased(SIEntity, name="si_of_org")
 

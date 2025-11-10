@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -47,3 +48,15 @@ class PermissionTreeDTO(BaseModel):
 class UserAccessTreeResponseDTO(BaseModel):
     user: UserReadDTO
     permissionTree: PermissionTreeDTO
+
+
+class UserSIListItemDTO(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserSIListResponseDTO(BaseModel):
+    si: List[UserSIListItemDTO] = Field(default_factory=list)
