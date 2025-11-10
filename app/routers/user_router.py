@@ -46,6 +46,27 @@ def create_user(
     return user_service.add_user(db, user)
 
 
+@router.get("/si_list", response_model=UserSIListResponseDTO)
+def get_user_si(
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> UserSIListResponseDTO:
+    """
+    Get current user SI
+    """
+    try:
+        return user_service.get_user_si(db, user_info.id)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Unknown error"},
+        )
+
+
 @router.get("/info_access", response_model=UserAccessTreeResponseDTO)
 def get_user_access_tree(
     db: Session = Depends(get_db),
@@ -77,27 +98,6 @@ def get_user_access_tree(
     """
     try:
         return user_service.get_user_access_tree(db, user_id)
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Unknown error"},
-        )
-
-
-@router.get("/si_list", response_model=UserSIListResponseDTO)
-def get_user_si(
-    db: Session = Depends(get_db),
-    user_info: UserReadDTO = Depends(token_required),
-) -> UserSIListResponseDTO:
-    """
-    Get current user SI
-    """
-    try:
-        return user_service.get_user_si(db, user_info.id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
