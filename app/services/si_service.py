@@ -12,8 +12,9 @@ def get_user_si(db: Session, user_id: int):
 
     if has_super:
         sis = user_repository.get_si_all(db)
+    else:
+        sis = user_repository.get_si_user_roles(db, user_id)
 
-    sis = user_repository.get_si_user_roles(db, user_id)
     items = [UserSIListItemDTO.model_validate(row) for row in sis]
 
     return UserSIListResponseDTO(si=items)
