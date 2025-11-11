@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.repositories import user_repository  # TODO: for test
 from app.services import user_service
 from app.dtos.user_dto import (
     UserAccessTreeResponseDTO,
@@ -65,7 +66,11 @@ def get_user_access_tree(
     test
     """
     try:
-        return user_service.get_user_access_tree(db, user_id)
+        user = user_repository.get_user(db, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return user_service.get_user_access_tree(db, user)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
