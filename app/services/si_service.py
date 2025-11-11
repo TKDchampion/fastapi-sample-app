@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from app.repositories import user_repository
-from app.dtos.user_dto import (
-    UserSIListItemDTO,
-    UserSIListResponseDTO,
+from app.repositories import si_repository, user_repository
+from app.dtos.si_dto import (
+    SIListItemDTO,
+    SIListResponseDTO,
 )
 
 
@@ -11,10 +11,10 @@ def get_user_si(db: Session, user_id: int):
     has_super = any(r.scope_type == "super" for r in roles)
 
     if has_super:
-        sis = user_repository.get_si_all(db)
+        sis = si_repository.get_si_all(db)
     else:
         sis = user_repository.get_si_user_roles(db, user_id)
 
-    items = [UserSIListItemDTO.model_validate(row) for row in sis]
+    items = [SIListItemDTO.model_validate(row) for row in sis]
 
-    return UserSIListResponseDTO(si=items)
+    return SIListResponseDTO(si=items)

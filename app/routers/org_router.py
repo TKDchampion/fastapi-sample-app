@@ -2,9 +2,9 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.dtos.org_dto import OrgListResponseDTO
 from app.services import org_service
 from app.dtos.user_dto import (
-    UserOrgListResponseDTO,
     UserReadDTO,
 )
 from app.services.jwt_service import token_required
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/org", tags=["Org"])
 
 
-@router.get("/list/{si_id}", response_model=UserOrgListResponseDTO)
+@router.get("/list/{si_id}", response_model=OrgListResponseDTO)
 def get_organizations_by_si_id(
     si_id: int,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
-) -> UserOrgListResponseDTO:
+) -> OrgListResponseDTO:
     """
     Get organizations by SI ID
     """

@@ -31,14 +31,6 @@ def get_user(db: Session, user_id: int):
     return db.scalar(select(UserEntity).where(UserEntity.id == user_id))
 
 
-def get_organizations_by_si_id(db: Session, si_id: int):
-    return (
-        db.execute(select(OrganizationEntity).where(OrganizationEntity.si_id == si_id))
-        .scalars()
-        .all()
-    )
-
-
 def get_user_roles(db: Session, user_id: int):
     return db.execute(
         select(
@@ -48,10 +40,6 @@ def get_user_roles(db: Session, user_id: int):
             user_roles_table.c.isActive,
         ).where(user_roles_table.c.user_id == user_id)
     ).all()
-
-
-def get_si_all(db: Session):
-    return db.execute(select(SIEntity)).scalars().all()
 
 
 def get_si_user_roles(db: Session, user_id: int):
@@ -134,34 +122,3 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
     )
     rows = db.execute(q).all()
     return rows
-
-
-def get_permissions(db: Session):
-    return db.execute(select(PermissionEntity.name, PermissionEntity.type)).all()
-
-
-def get_all_orgs(db: Session):
-    return db.execute(
-        select(
-            OrganizationEntity.id,
-            OrganizationEntity.name,
-            OrganizationEntity.si_id,
-            OrganizationEntity.logo,
-        )
-    ).all()
-
-
-def get_si_org_tree(db: Session):
-    stmt = (
-        select(
-            SIEntity.id,
-            SIEntity.name,
-            SIEntity.logo,
-            OrganizationEntity.id,
-            OrganizationEntity.name,
-            OrganizationEntity.logo,
-        )
-        .join(OrganizationEntity, OrganizationEntity.si_id == SIEntity.id, isouter=True)
-        .order_by(SIEntity.id)
-    )
-    return db.execute(stmt).all()

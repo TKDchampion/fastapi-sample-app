@@ -1,10 +1,10 @@
 from collections import defaultdict
 from app.dtos.user_dto import UserReadDTO
-from app.repositories import user_repository
+from app.repositories import si_repository
 
 
 def build_super_tree(user, perms_by_type, result, db):
-    rows = user_repository.get_si_org_tree(db)
+    rows = si_repository.get_si_org_tree(db)
 
     si_map = defaultdict(lambda: {"name": "", "orgs": []})
 

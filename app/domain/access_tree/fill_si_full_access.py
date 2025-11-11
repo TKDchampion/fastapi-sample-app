@@ -1,4 +1,4 @@
-from app.repositories import user_repository
+from app.repositories import org_repository
 
 
 def fill_si_full_access(si_map: dict, perms_by_type, db):
@@ -9,7 +9,7 @@ def fill_si_full_access(si_map: dict, perms_by_type, db):
     if not full_si_ids:
         return
 
-    orgs_all = user_repository.get_all_orgs(db)
+    orgs_all = org_repository.get_all_orgs(db)
 
     for oid, oname, sid_fk, ologo in orgs_all:
         if sid_fk in full_si_ids:
