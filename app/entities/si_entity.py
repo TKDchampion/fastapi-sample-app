@@ -12,6 +12,7 @@ class SIEntity(Base):
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     logo: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text)
+    disabled: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, server_default=func.now()
     )
@@ -22,12 +23,12 @@ class SIEntity(Base):
         server_default=func.now(),
     )
 
-    organizations: Mapped[list["OrganizationEntity"]] = relationship(
+    orgs: Mapped[list["OrganizationEntity"]] = relationship(
         "OrganizationEntity", back_populates="si"
     )
 
-    si_permissions: Mapped[list["UserEntity"]] = relationship(
-        "UserEntity",
+    permissions: Mapped[list["PermissionEntity"]] = relationship(
+        "PermissionEntity",
         secondary="si_permissions",
-        back_populates="si",
+        back_populates="sis",
     )

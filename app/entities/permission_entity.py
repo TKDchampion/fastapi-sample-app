@@ -28,3 +28,15 @@ class PermissionEntity(Base):
         secondary=role_permissions,
         back_populates="permissions",
     )
+    sis: Mapped[list["SIEntity"]] = relationship(
+        "SIEntity",
+        secondary="si_permissions",
+        back_populates="permissions",
+        lazy="selectin",
+    )
+    orgs: Mapped[list["OrganizationEntity"]] = relationship(
+        "OrganizationEntity",
+        secondary="org_permissions",
+        back_populates="permissions",
+        lazy="selectin",
+    )

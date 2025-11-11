@@ -25,7 +25,7 @@ class RoleEntity(Base):
         server_default=func.now(),
     )
 
-    organization: Mapped["OrganizationEntity"] = relationship(
+    org: Mapped["OrganizationEntity"] = relationship(
         "OrganizationEntity", back_populates="roles"
     )
 

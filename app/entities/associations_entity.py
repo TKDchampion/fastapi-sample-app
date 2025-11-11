@@ -68,7 +68,7 @@ org_permissions = Table(
         ForeignKey("permissions.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    PrimaryKeyConstraint("organization_id", "permission_id"),
+    PrimaryKeyConstraint("org_id", "permission_id"),
 )
 
 org_business_modules = Table(

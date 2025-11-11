@@ -54,6 +54,7 @@ class UserSIListItemDTO(BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
+    disabled: bool
     created_at: datetime
     updated_at: datetime
 
@@ -68,6 +69,7 @@ class UserOrgListItemDTO(BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
+    disabled: bool
     created_at: datetime
     updated_at: datetime
 

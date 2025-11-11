@@ -60,6 +60,7 @@ def get_si_user_roles(db: Session, user_id: int):
             SIEntity.id,
             SIEntity.name,
             SIEntity.logo,
+            SIEntity.disabled,
             SIEntity.created_at,
             SIEntity.updated_at,
         )
