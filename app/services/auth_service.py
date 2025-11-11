@@ -80,6 +80,8 @@ class AuthService(BaseHTTPService):
     async def authenticate_with_code(self, code: str) -> dict:
         tokens = await self.exchange_code_for_token(code)
         user = await self.google_auth(tokens["access_token"])
-        token = jwt_service.create_access_token(data={**user})
+        token = jwt_service.create_access_token(
+            data={**user}, expires_delta=60 * 24 * 7
+        )
 
         return {**user, "token": token}

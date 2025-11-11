@@ -9,6 +9,9 @@ from app.entities.si_entity import SIEntity
 from app.repositories import user_repository
 from app.dtos.user_dto import (
     UserCreateDTO,
+    UserOrgListItemDTO,
+    UserOrgListResponseDTO,
+    UserReadDTO,
     UserSIListItemDTO,
     UserSIListResponseDTO,
 )
@@ -26,12 +29,8 @@ def get_user_by_email(db: Session, email: str):
     return user_repository.get_user_by_email(db, email)
 
 
-def get_user_access_tree(db: Session, user_id: int):
-    user = user_repository.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    roles = user_repository.get_user_roles_si_org_perm(db, user_id)
+def get_user_access_tree(db: Session, user: UserReadDTO):
+    roles = user_repository.get_user_roles_si_org_perm(db, user.id)
     perms = user_repository.get_permissions(db)
 
     perms_by_type = defaultdict(list)
@@ -65,10 +64,6 @@ def get_user_access_tree(db: Session, user_id: int):
 
 
 def get_user_si(db: Session, user_id: int):
-    user = user_repository.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     roles = user_repository.get_user_roles(db, user_id)
     has_super = any(r.scope_type == "super" for r in roles)
 
@@ -79,3 +74,19 @@ def get_user_si(db: Session, user_id: int):
     items = [UserSIListItemDTO.model_validate(row) for row in sis]
 
     return UserSIListResponseDTO(si=items)
+
+
+def get_organizations_by_si_id(db: Session, si_id: int):
+    orgs = user_repository.get_organizations_by_si_id(db, si_id)
+
+    if not orgs:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "error", "msg": "Error ID"},
+        )
+
+    items = [
+        UserOrgListItemDTO.model_validate(org, from_attributes=True) for org in orgs
+    ]
+
+    return UserOrgListResponseDTO(org=items)

@@ -31,6 +31,14 @@ def get_user(db: Session, user_id: int):
     return db.scalar(select(UserEntity).where(UserEntity.id == user_id))
 
 
+def get_organizations_by_si_id(db: Session, si_id: int):
+    return (
+        db.execute(select(OrganizationEntity).where(OrganizationEntity.si_id == si_id))
+        .scalars()
+        .all()
+    )
+
+
 def get_user_roles(db: Session, user_id: int):
     return db.execute(
         select(

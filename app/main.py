@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from app.routers import auth_router, user_router
+from app.routers import auth_router, org_router, si_router, user_router
 from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -58,6 +58,8 @@ app.add_middleware(
 Routers = [
     user_router.router,
     auth_router.router,
+    si_router.router,
+    org_router.router,
 ]
 
 for r in Routers:

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserCreateDTO(BaseModel):
@@ -60,3 +60,17 @@ class UserSIListItemDTO(BaseModel):
 
 class UserSIListResponseDTO(BaseModel):
     si: List[UserSIListItemDTO] = Field(default_factory=list)
+
+
+class UserOrgListItemDTO(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserOrgListResponseDTO(BaseModel):
+    org: List[UserOrgListItemDTO] = Field(default_factory=list)
