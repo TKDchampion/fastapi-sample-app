@@ -1,6 +1,8 @@
+import datetime
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    DateTime,
     Index,
     Integer,
     PrimaryKeyConstraint,
@@ -9,6 +11,7 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     UniqueConstraint,
+    func,
 )
 from app.database import Base
 
@@ -40,22 +43,49 @@ user_roles = Table(
     Index("idx_user_roles_user_id", "user_id"),
 )
 
-user_si = Table(
-    "user_si",
+si_permissions = Table(
+    "si_permissions",
     Base.metadata,
-    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("si_id", ForeignKey("si.id", ondelete="CASCADE"), primary_key=True),
-    PrimaryKeyConstraint("user_id", "si_id"),
+    Column(
+        "permission_id",
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    PrimaryKeyConstraint("si_id", "permission_id"),
 )
 
-user_org = Table(
-    "user_org",
+org_permissions = Table(
+    "org_permissions",
     Base.metadata,
-    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column(
-        "organization_id",
+        "org_id",
         ForeignKey("organizations.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    PrimaryKeyConstraint("user_id", "organization_id"),
+    Column(
+        "permission_id",
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    PrimaryKeyConstraint("organization_id", "permission_id"),
+)
+
+org_business_modules = Table(
+    "org_business_modules",
+    Base.metadata,
+    Column(
+        "org_id", ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "business_modules_id",
+        ForeignKey("business_modules.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "enabled_at",
+        DateTime,
+        default=datetime.datetime.utcnow(),
+        server_default=func.now(),
+    ),
 )

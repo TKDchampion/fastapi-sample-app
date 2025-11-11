@@ -5,8 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 from app.entities.associations_entity import (
     user_roles,
-    user_si,
-    user_org,
 )
 
 
@@ -32,16 +30,4 @@ class UserEntity(Base):
         "RoleEntity",
         secondary=user_roles,
         back_populates="users",
-    )
-
-    si: Mapped[list["SIEntity"]] = relationship(
-        "SIEntity",
-        secondary=user_si,
-        back_populates="si_users",
-    )
-
-    org: Mapped[list["OrganizationEntity"]] = relationship(
-        "OrganizationEntity",
-        secondary=user_org,
-        back_populates="org_users",
     )

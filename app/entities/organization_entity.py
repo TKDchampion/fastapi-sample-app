@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
+from typing import List
 from sqlalchemy import String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -27,11 +28,16 @@ class OrganizationEntity(Base):
 
     si: Mapped["SIEntity"] = relationship("SIEntity", back_populates="organizations")
     roles: Mapped[list["RoleEntity"]] = relationship(
-        "RoleEntity", back_populates="organization"
+        "RoleEntity", back_populates="organizations"
     )
 
-    org_users: Mapped[list["UserEntity"]] = relationship(
+    org_permissions: Mapped[list["UserEntity"]] = relationship(
         "UserEntity",
-        secondary="user_org",
-        back_populates="org",
+        secondary="org_permissions",
+        back_populates="organizations",
+    )
+
+    business_modules: Mapped[List["BusinessModuleEntity"]] = relationship(
+        secondary="org_business_modules",
+        back_populates="organizations",
     )
