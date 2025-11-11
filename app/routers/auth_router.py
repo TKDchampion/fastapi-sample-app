@@ -16,6 +16,9 @@ async def google_login(
 ):
     try:
         return await service.authenticate_with_code(request_dto)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
     except Exception as e:
         logger.warning(f"AuthService failed: {e.detail}")
         detail = e.detail if isinstance(e.detail, dict) else {"msg": str(e.detail)}
