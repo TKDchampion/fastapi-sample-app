@@ -70,6 +70,8 @@ class UserOrgListItemDTO(BaseModel):
     name: str
     logo: Optional[str] = None
     disabled: bool
+    contract_start: datetime | None = None
+    contract_end: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
