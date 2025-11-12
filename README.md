@@ -48,6 +48,9 @@ source venv/bin/activate
 # Windows
 venv\Scripts\activate
 
+# create and update requirements
+# pip freeze | grep -v -f requirements.txt - >> requirements.txt
+
 # 3. Install dependencies
 pip install -r requirements.txt
 
