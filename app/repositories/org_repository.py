@@ -29,13 +29,32 @@ def get_by_name(db: Session, name: str) -> OrganizationEntity | None:
     return result.scalars().first()
 
 
-def create_org(db: Session, dto: OrgCreateRequestDTO, si_id: int) -> OrganizationEntity:
+def upsert_org(
+    db: Session,
+    dto: OrgCreateRequestDTO,
+    si_id: int,
+    org_id: int | None = None,
+) -> OrganizationEntity:
     valid_fields = OrganizationEntity.__table__.columns.keys()
     data = {k: v for k, v in dto.model_dump().items() if k in valid_fields}
     data["si_id"] = si_id
-    print("Creating organization with data:", data)
-    org = OrganizationEntity(**data)
-    db.add(org)
-    db.flush()
+
+    if org_id:
+        # --- UPDATE ---
+        org = (
+            db.query(OrganizationEntity)
+            .filter(OrganizationEntity.id == org_id, OrganizationEntity.si_id == si_id)
+            .first()
+        )
+        if not org:
+            raise ValueError(f"Organization {org_id} not found under SI {si_id}")
+        for k, v in data.items():
+            setattr(org, k, v)
+        db.flush()
+    else:
+        # --- CREATE ---
+        org = OrganizationEntity(**data)
+        db.add(org)
+        db.flush()
 
     return org

@@ -6,6 +6,7 @@ from app.dtos.org_dto import OrgCreateRequestDTO
 
 
 async def parse_org_create_form(
+    org_id: Optional[int] = Form(None),
     name: str = Form(...),
     disabled: Optional[bool] = Form(False),
     contract_start: Optional[str] = Form(None),
@@ -13,6 +14,7 @@ async def parse_org_create_form(
     business_modules: Optional[list[int]] = Form(None),
 ):
     dto = OrgCreateRequestDTO(
+        org_id=org_id,
         name=name,
         disabled=disabled,
         contract_start=(

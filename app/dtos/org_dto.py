@@ -23,6 +23,7 @@ class OrgListResponseDTO(BaseModel):
 
 
 class OrgCreateRequestDTO(BaseModel):
+    org_id: Optional[int] = None
     logo: UploadFile = File(None)
     name: str
     disabled: Optional[bool] = False

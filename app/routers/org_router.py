@@ -5,7 +5,7 @@ from app.database import get_db
 from app.domain.org_form.org_form_create_parser import parse_org_create_form
 from app.dtos.org_dto import OrgCreateRequestDTO, OrgListItemDTO, OrgListResponseDTO
 from app.entities.organization_entity import OrganizationEntity
-from app.repositories.org_repository import create_org, get_by_name
+from app.repositories.org_repository import upsert_org, get_by_name
 from app.repositories.role_repository import create_roles
 from app.services import org_service
 from app.dtos.user_dto import (
@@ -44,12 +44,12 @@ def get_organizations_by_si_id(
 
 
 @router.post(
-    "/create/{si_id}",
+    "/upsert/{si_id}",
     response_model=OrgListItemDTO,
     summary="Create new organization under SI",
     description="Create a new organization under a given SI and upload logo to GCS.",
 )
-def create_organization(
+def upsert_organization(
     si_id: int,
     dto: OrgCreateRequestDTO = Depends(parse_org_create_form),
     logo: UploadFile = File(...),
@@ -64,7 +64,7 @@ def create_organization(
     dto.logo = logo_url
 
     try:
-        return org_service.create_organization_with_roles(db, dto, si_id)
+        return org_service.upsert_organization_with_roles(db, dto, si_id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
