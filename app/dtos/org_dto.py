@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
+from fastapi import UploadFile
+from fastapi.params import File
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -18,3 +20,15 @@ class OrgListItemDTO(BaseModel):
 
 class OrgListResponseDTO(BaseModel):
     org: List[OrgListItemDTO] = Field(default_factory=list)
+
+
+class OrgCreateRequestDTO(BaseModel):
+    logo: UploadFile = File(None)
+    name: str
+    disabled: Optional[bool] = False
+    contract_start: Optional[datetime] = None
+    contract_end: Optional[datetime] = None
+    business_modules: Optional[list[int]] = None
+
+    # class Config:
+    #     orm_mode = True

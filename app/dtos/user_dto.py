@@ -48,35 +48,3 @@ class PermissionTreeDTO(BaseModel):
 class UserAccessTreeResponseDTO(BaseModel):
     user: UserReadDTO
     permissionTree: PermissionTreeDTO
-
-
-# class SIListItemDTO(BaseModel):
-#     id: int
-#     name: str
-#     logo: Optional[str] = None
-#     disabled: bool
-#     created_at: datetime
-#     updated_at: datetime
-
-#     model_config = ConfigDict(from_attributes=True)
-
-
-# class SIListResponseDTO(BaseModel):
-#     si: List[SIListItemDTO] = Field(default_factory=list)
-
-
-# class OrgListItemDTO(BaseModel):
-#     id: int
-#     name: str
-#     logo: Optional[str] = None
-#     disabled: bool
-#     contract_start: datetime | None = None
-#     contract_end: datetime | None = None
-#     created_at: datetime
-#     updated_at: datetime
-
-#     model_config = ConfigDict(from_attributes=True)
-
-
-# class OrgListResponseDTO(BaseModel):
-#     org: List[OrgListItemDTO] = Field(default_factory=list)
