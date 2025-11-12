@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.dtos.org_dto import OrgCreateRequestDTO
+from app.dtos.org_dto import OrgUpsertRequestDTO
 from app.entities.organization_entity import OrganizationEntity
 
 
@@ -31,7 +31,7 @@ def get_by_name(db: Session, name: str) -> OrganizationEntity | None:
 
 def upsert_org(
     db: Session,
-    dto: OrgCreateRequestDTO,
+    dto: OrgUpsertRequestDTO,
     si_id: int,
     org_id: int | None = None,
 ) -> OrganizationEntity:

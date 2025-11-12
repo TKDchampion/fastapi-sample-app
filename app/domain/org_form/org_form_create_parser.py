@@ -2,7 +2,7 @@ from fastapi import Form
 from datetime import datetime
 from typing import Optional
 
-from app.dtos.org_dto import OrgCreateRequestDTO
+from app.dtos.org_dto import OrgUpsertRequestDTO
 
 
 async def parse_org_create_form(
@@ -13,7 +13,7 @@ async def parse_org_create_form(
     contract_end: Optional[str] = Form(None),
     business_modules: Optional[list[int]] = Form(None),
 ):
-    dto = OrgCreateRequestDTO(
+    dto = OrgUpsertRequestDTO(
         org_id=org_id,
         name=name,
         disabled=disabled,

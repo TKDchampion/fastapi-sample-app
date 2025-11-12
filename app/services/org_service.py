@@ -4,7 +4,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.repositories import business_module_repository, org_repository, role_repository
 from app.dtos.org_dto import (
-    OrgCreateRequestDTO,
+    OrgUpsertRequestDTO,
+    OrgUpsertResponseDTO,
     OrgListItemDTO,
     OrgListResponseDTO,
 )
@@ -27,21 +28,23 @@ def get_organizations_by_si_id(db: Session, si_id: int):
 
 
 def upsert_organization_with_roles(
-    db: Session, dto: OrgCreateRequestDTO, si_id: int
-) -> OrgListItemDTO:
+    db: Session, dto: OrgUpsertRequestDTO, si_id: int
+) -> OrgUpsertResponseDTO:
     try:
         if dto.org_id:
             org = org_repository.upsert_org(db, dto, si_id, dto.org_id)
         else:
             org = org_repository.upsert_org(db, dto, si_id)
-            business_module_repository.add_org_business_module(
-                db, org.id, dto.business_modules
-            )
             role_repository.create_roles(db, org)
+        business_modules = business_module_repository.add_org_business_module(
+            db, org.id, dto.business_modules
+        )
 
         db.commit()
         db.refresh(org)
-        return OrgListItemDTO.model_validate(org, from_attributes=True)
+        return OrgUpsertResponseDTO.model_validate(
+            {**org.__dict__, "business_modules": business_modules}, from_attributes=True
+        )
 
     except ValueError as e:
         logger.warning("Value error: %s", e)

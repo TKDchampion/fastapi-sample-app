@@ -2,11 +2,14 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.domain.org_form.org_form_create_parser import parse_org_create_form
-from app.dtos.org_dto import OrgCreateRequestDTO, OrgListItemDTO, OrgListResponseDTO
+from app.dtos.org_dto import (
+    LogoUploadResponseDTO,
+    OrgUpsertRequestDTO,
+    OrgUpsertResponseDTO,
+    OrgListItemDTO,
+    OrgListResponseDTO,
+)
 from app.entities.organization_entity import OrganizationEntity
-from app.repositories.org_repository import upsert_org, get_by_name
-from app.repositories.role_repository import create_roles
 from app.services import org_service
 from app.dtos.user_dto import (
     UserReadDTO,
@@ -44,27 +47,46 @@ def get_organizations_by_si_id(
 
 
 @router.post(
+    "/upload-logo",
+    summary="Upload organization logo to GCS",
+    response_model=LogoUploadResponseDTO,
+)
+def upload_organization_logo(
+    logo: UploadFile = File(...),
+    # user_info: UserReadDTO = Depends(token_required),
+):
+    """Upload organization logo to GCS"""
+    try:
+        logo_url = upload_logo_to_gcs(logo) if logo else None
+        return {"url": logo_url}
+
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Create organization error"},
+        )
+
+
+@router.post(
     "/upsert/{si_id}",
-    response_model=OrgListItemDTO,
+    response_model=OrgUpsertResponseDTO,
     summary="Create new organization under SI",
     description="Create a new organization under a given SI and upload logo to GCS.",
 )
 def upsert_organization(
     si_id: int,
-    dto: OrgCreateRequestDTO = Depends(parse_org_create_form),
-    logo: UploadFile = File(...),
+    org: OrgUpsertRequestDTO,
     db: Session = Depends(get_db),
     # user_info: UserReadDTO = Depends(token_required),
-) -> OrgListItemDTO:
+) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
-    if get_by_name(db, dto.name):
-        raise HTTPException(status_code=400, detail="Organization name already exists")
-
-    logo_url = upload_logo_to_gcs(logo) if logo else None
-    dto.logo = logo_url
 
     try:
-        return org_service.upsert_organization_with_roles(db, dto, si_id)
+        return org_service.upsert_organization_with_roles(db, org, si_id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

@@ -22,14 +22,31 @@ class OrgListResponseDTO(BaseModel):
     org: List[OrgListItemDTO] = Field(default_factory=list)
 
 
-class OrgCreateRequestDTO(BaseModel):
+class OrgUpsertRequestDTO(BaseModel):
     org_id: Optional[int] = None
-    logo: UploadFile = File(None)
+    logo: str
     name: str
-    disabled: Optional[bool] = False
     contract_start: Optional[datetime] = None
     contract_end: Optional[datetime] = None
-    business_modules: Optional[list[int]] = None
+    business_modules: list[int]
 
     # class Config:
     #     orm_mode = True
+
+
+class OrgUpsertResponseDTO(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+    disabled: bool
+    contract_start: datetime | None = None
+    contract_end: datetime | None = None
+    business_modules: List[int] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LogoUploadResponseDTO(BaseModel):
+    url: str
