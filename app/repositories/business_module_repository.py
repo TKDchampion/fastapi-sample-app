@@ -1,4 +1,4 @@
-from requests import Session
+from sqlalchemy.orm import Session
 from sqlalchemy import insert
 from app.entities.associations_entity import org_business_modules
 from datetime import datetime
