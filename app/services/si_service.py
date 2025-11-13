@@ -15,6 +15,9 @@ def get_user_si(db: Session, user_id: int):
     else:
         sis = user_repository.get_si_user_roles(db, user_id)
 
+    if not sis:
+        return SIListResponseDTO(si=[])
+
     items = [SIListItemDTO.model_validate(row) for row in sis]
 
     return SIListResponseDTO(si=items)

@@ -4,9 +4,22 @@ from app.dtos.org_dto import OrgUpsertRequestDTO
 from app.entities.organization_entity import OrganizationEntity
 
 
-def get_organizations_by_si_id(db: Session, si_id: int):
+def get_orgs_by_si_id(db: Session, si_id: int):
     return (
         db.execute(select(OrganizationEntity).where(OrganizationEntity.si_id == si_id))
+        .scalars()
+        .all()
+    )
+
+
+def get_orgs_ids_by_si(db: Session, si_id: int, ids: list[int]):
+    return (
+        db.execute(
+            select(OrganizationEntity).where(
+                OrganizationEntity.si_id == si_id,
+                OrganizationEntity.id.in_(ids),
+            )
+        )
         .scalars()
         .all()
     )

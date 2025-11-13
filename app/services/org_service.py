@@ -2,7 +2,12 @@ import logging
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-from app.repositories import business_module_repository, org_repository, role_repository
+from app.repositories import (
+    business_module_repository,
+    org_repository,
+    role_repository,
+    user_repository,
+)
 from app.dtos.org_dto import (
     OrgUpsertRequestDTO,
     OrgUpsertResponseDTO,
@@ -13,14 +18,24 @@ from app.dtos.org_dto import (
 logger = logging.getLogger(__name__)
 
 
-def get_organizations_by_si_id(db: Session, si_id: int):
-    orgs = org_repository.get_organizations_by_si_id(db, si_id)
+def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
+    user_roles = user_repository.get_user_roles(db, user_id)
+
+    has_si_or_super_scope = any(
+        (r.scope_type == "si" and r.scope_id == si_id) or r.scope_type == "super"
+        for r in user_roles
+    )
+
+    if has_si_or_super_scope:
+        orgs = org_repository.get_orgs_by_si_id(db, si_id)
+    else:
+        allowed_org_ids = [r.scope_id for r in user_roles if r.scope_type == "org"]
+        if not allowed_org_ids:
+            return OrgListResponseDTO(org=[])
+        orgs = org_repository.get_orgs_ids_by_si(db, si_id, allowed_org_ids)
 
     if not orgs:
-        raise HTTPException(
-            status_code=404,
-            detail={"type": "error", "msg": "Error ID"},
-        )
+        return OrgListResponseDTO(org=[])
 
     items = [OrgListItemDTO.model_validate(org, from_attributes=True) for org in orgs]
 

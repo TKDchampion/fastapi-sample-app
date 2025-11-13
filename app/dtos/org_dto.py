@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import List, Optional
-from fastapi import UploadFile
-from fastapi.params import File
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.dtos.business_module_dto import BusinessModuleDTO
 
 
 class OrgListItemDTO(BaseModel):
@@ -14,6 +14,7 @@ class OrgListItemDTO(BaseModel):
     contract_end: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    business_modules: list[BusinessModuleDTO] = []
 
     model_config = ConfigDict(from_attributes=True)
 

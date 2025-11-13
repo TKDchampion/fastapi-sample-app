@@ -6,7 +6,6 @@ from app.dtos.org_dto import (
     LogoUploadResponseDTO,
     OrgUpsertRequestDTO,
     OrgUpsertResponseDTO,
-    OrgListItemDTO,
     OrgListResponseDTO,
 )
 from app.entities.organization_entity import OrganizationEntity
@@ -34,7 +33,7 @@ def get_organizations_by_si_id(
     Get organizations by SI ID
     """
     try:
-        return org_service.get_organizations_by_si_id(db, si_id)
+        return org_service.get_organizations_by_si_id(db, si_id, user_info.id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
