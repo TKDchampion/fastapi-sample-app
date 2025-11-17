@@ -8,7 +8,6 @@ from app.dtos.org_dto import (
     OrgUpsertResponseDTO,
     OrgListResponseDTO,
 )
-from app.entities.organization_entity import OrganizationEntity
 from app.services import org_service
 from app.dtos.user_dto import (
     UserReadDTO,
@@ -52,7 +51,7 @@ def get_organizations_by_si_id(
 )
 def upload_organization_logo(
     logo: UploadFile = File(...),
-    # user_info: UserReadDTO = Depends(token_required),
+    user_info: UserReadDTO = Depends(token_required),
 ):
     """Upload organization logo to GCS"""
     try:
@@ -80,12 +79,12 @@ def upsert_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
     db: Session = Depends(get_db),
-    # user_info: UserReadDTO = Depends(token_required),
+    user_info: UserReadDTO = Depends(token_required),
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
 
     try:
-        return org_service.upsert_organization_with_roles(db, org, si_id)
+        return org_service.upsert_organization_with_roles(db, org, si_id, user_info)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

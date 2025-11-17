@@ -2,6 +2,7 @@ import logging
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from app.domain.access_tree.check_user_access import OrgWriteParams
 from app.repositories import (
     business_module_repository,
     org_repository,
@@ -14,6 +15,7 @@ from app.dtos.org_dto import (
     OrgListItemDTO,
     OrgListResponseDTO,
 )
+from app.services.permission_guard_service import verify_org_write_permission
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +45,16 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 
 def upsert_organization_with_roles(
-    db: Session, dto: OrgUpsertRequestDTO, si_id: int
+    db: Session, dto: OrgUpsertRequestDTO, si_id: int, user_id: int
 ) -> OrgUpsertResponseDTO:
     try:
         if dto.org_id:
+            params = OrgWriteParams(si_id=si_id, org_id=dto.org_id, perm="org.edit")
+            verify_org_write_permission(db, user_id, params)
             org = org_repository.upsert_org(db, dto, si_id, dto.org_id)
         else:
+            params = OrgWriteParams(si_id=si_id, perm="org.create")
+            verify_org_write_permission(db, user_id, params)
             org = org_repository.upsert_org(db, dto, si_id)
             role_repository.create_roles(db, org)
         business_modules = business_module_repository.add_org_business_module(
@@ -61,6 +67,9 @@ def upsert_organization_with_roles(
             {**org.__dict__, "business_modules": business_modules}, from_attributes=True
         )
 
+    except HTTPException:
+        db.rollback()
+        raise
     except ValueError as e:
         logger.warning("Value error: %s", e)
         db.rollback()
