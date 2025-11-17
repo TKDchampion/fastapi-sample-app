@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.dtos.common_dto import TextResponseDTO
 from app.dtos.org_dto import (
     LogoUploadResponseDTO,
     OrgUpsertRequestDTO,
@@ -85,6 +86,36 @@ def upsert_organization(
 
     try:
         return org_service.upsert_organization_with_roles(db, org, si_id, user_info)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Create organization error"},
+        )
+
+
+@router.put(
+    "/is_active/{si_id}/{org_id}",
+    response_model=TextResponseDTO,
+    summary="Update org is_active",
+    description="Update this org is_active",
+)
+def upsert_organization(
+    si_id: int,
+    org_id: int,
+    is_active: bool,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Create organization and upload logo to GCS"""
+
+    try:
+        return org_service.update_organization_isActive_with_roles(
+            db, user_info, si_id, org_id, is_active
+        )
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

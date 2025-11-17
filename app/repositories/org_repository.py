@@ -1,7 +1,10 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from app.dtos.org_dto import OrgUpsertRequestDTO
 from app.entities.organization_entity import OrganizationEntity
+from app.entities.associations_entity import (
+    user_roles as user_roles_table,
+)
 
 
 def get_orgs_by_si_id(db: Session, si_id: int):
@@ -71,3 +74,21 @@ def upsert_org(
         db.flush()
 
     return org
+
+
+def update_user_role_is_active(
+    db: Session, user_id: int, org_id: int, new_is_active: bool
+):
+    stmt = (
+        update(user_roles_table)
+        .where(
+            user_roles_table.c.user_id == user_id,
+            user_roles_table.c.scope_type == "org",
+            user_roles_table.c.scope_id == org_id,
+        )
+        .values(isActive=new_is_active)
+    )
+    result = db.execute(stmt)
+    db.commit()
+
+    return result.rowcount

@@ -3,6 +3,8 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import OrgWriteParams
+from app.dtos.common_dto import TextResponseDTO
+from app.dtos.user_dto import UserReadDTO
 from app.repositories import (
     business_module_repository,
     org_repository,
@@ -45,16 +47,16 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 
 def upsert_organization_with_roles(
-    db: Session, dto: OrgUpsertRequestDTO, si_id: int, user_id: int
+    db: Session, dto: OrgUpsertRequestDTO, si_id: int, user_info: UserReadDTO
 ) -> OrgUpsertResponseDTO:
     try:
         if dto.org_id:
             params = OrgWriteParams(si_id=si_id, org_id=dto.org_id, perm="org.edit")
-            verify_org_write_permission(db, user_id, params)
+            verify_org_write_permission(db, user_info, params)
             org = org_repository.upsert_org(db, dto, si_id, dto.org_id)
         else:
             params = OrgWriteParams(si_id=si_id, perm="org.create")
-            verify_org_write_permission(db, user_id, params)
+            verify_org_write_permission(db, user_info, params)
             org = org_repository.upsert_org(db, dto, si_id)
             role_repository.create_roles(db, org)
         business_modules = business_module_repository.add_org_business_module(
@@ -70,13 +72,56 @@ def upsert_organization_with_roles(
     except HTTPException:
         db.rollback()
         raise
-    except ValueError as e:
-        logger.warning("Value error: %s", e)
+    except IntegrityError as e:
+        logger.error("Exception message : %s", e, exc_info=True)
         db.rollback()
         raise HTTPException(
-            status_code=404,
-            detail={"type": "error", "msg": str(e)},
+            status_code=400,
+            detail={"type": "error", "msg": "db error"},
         )
+    except SQLAlchemyError as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "db create error"},
+        )
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "create or update organization error"},
+        )
+
+
+def update_organization_isActive_with_roles(
+    db: Session, user_info: UserReadDTO, si_id: int, org_id: int, is_active: bool
+):
+    try:
+        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
+        verify_org_write_permission(db, user_info, params)
+        rows_updated = org_repository.update_user_role_is_active(
+            db, user_info.id, org_id, is_active
+        )
+
+        if rows_updated == 0:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "type": "error",
+                    "msg": f"No user_role found for user_id={user_info.id}, org_id={org_id}",
+                },
+            )
+
+        return TextResponseDTO(
+            status="success",
+            message=f"User role updated successfully for org_id={org_id}, isActive={is_active}",
+        )
+
+    except HTTPException:
+        db.rollback()
+        raise
     except IntegrityError as e:
         logger.error("Exception message : %s", e, exc_info=True)
         db.rollback()

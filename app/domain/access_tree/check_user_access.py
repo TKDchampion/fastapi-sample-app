@@ -21,19 +21,25 @@ def can_write_org(access_tree: dict, params: OrgWriteParams) -> bool:
 
     # iterate SI nodes
     for si_node in tree.get("accessibleNode", []):
-        # 找到對應的 SI（必須 active）
-        if si_node["id"] == si_id and si_node["isActive"]:
-            return True
-        if si_node["id"] != si_id or not si_node["isActive"]:
+        if si_node["id"] != si_id:
             continue
 
-        # 新增 Org：檢查 SI 層級權限
-        # if org_id is None:
-        #     return perm in si_node.get("permissions", [])
+        # 找到對應的 SI（必須 active）
+        if (
+            si_node["id"] == si_id
+            and si_node["isActive"]
+            and any(
+                org_node["id"] == org_id
+                for org_node in si_node.get("accessibleNode", [])
+            )
+        ):
+            return True
 
         # 修改 Org：檢查 Org 層級權限
         for org_node in si_node.get("accessibleNode", []):
+            print(org_node)
             if org_node["id"] == org_id and org_node["isActive"]:
+                print(perm, org_node.get("permissions", []))
                 return perm in org_node.get("permissions", [])
 
     return False
