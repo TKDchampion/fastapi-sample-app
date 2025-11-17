@@ -10,8 +10,8 @@ class OrgListItemDTO(BaseModel):
     name: str
     logo: Optional[str] = None
     disabled: bool
-    contract_start: datetime | None = None
-    contract_end: datetime | None = None
+    contract_start: datetime
+    contract_end: datetime
     created_at: datetime
     updated_at: datetime
     business_modules: list[BusinessModuleDTO] = []
@@ -27,8 +27,8 @@ class OrgUpsertRequestDTO(BaseModel):
     org_id: Optional[int] = None
     logo: str
     name: str
-    contract_start: Optional[datetime] = None
-    contract_end: Optional[datetime] = None
+    contract_start: datetime
+    contract_end: datetime
     business_modules: list[int]
 
     # class Config:
@@ -40,8 +40,8 @@ class OrgUpsertResponseDTO(BaseModel):
     name: str
     logo: Optional[str] = None
     disabled: bool
-    contract_start: datetime | None = None
-    contract_end: datetime | None = None
+    contract_start: datetime
+    contract_end: datetime
     business_modules: List[int] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime

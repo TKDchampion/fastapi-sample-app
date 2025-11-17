@@ -57,26 +57,26 @@ def get_user_access_tree(
         )
 
 
-@router.get("/{user_id}", response_model=UserAccessTreeResponseDTO)
-def get_user_access_tree(
-    user_id: int,
-    db: Session = Depends(get_db),
-) -> UserAccessTreeResponseDTO:
-    """
-    test
-    """
-    try:
-        user = user_repository.get_user(db, user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+# @router.get("/{user_id}", response_model=UserAccessTreeResponseDTO)
+# def get_user_access_tree(
+#     user_id: int,
+#     db: Session = Depends(get_db),
+# ) -> UserAccessTreeResponseDTO:
+#     """
+#     test
+#     """
+#     try:
+#         user = user_repository.get_user(db, user_id)
+#         if not user:
+#             raise HTTPException(status_code=404, detail="User not found")
 
-        return user_service.get_user_access_tree(db, user)
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Unknown error"},
-        )
+#         return user_service.get_user_access_tree(db, user)
+#     except HTTPException:
+#         # 已是 HTTPException，直接拋出
+#         raise
+#     except Exception as e:
+#         logger.error("Exception message : %s", e, exc_info=True)
+#         raise HTTPException(
+#             status_code=500,
+#             detail={"type": "error", "msg": "Unknown error"},
+#         )

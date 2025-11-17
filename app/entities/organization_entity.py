@@ -17,8 +17,12 @@ class OrganizationEntity(Base):
     logo: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text)
     disabled: Mapped[bool] = mapped_column(default=False, nullable=False)
-    contract_start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    contract_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    contract_start: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow, server_default=func.now()
+    )
+    contract_end: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow, server_default=func.now()
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, server_default=func.now()
     )
