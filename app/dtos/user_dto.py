@@ -26,6 +26,7 @@ class OrgNodeDTO(BaseModel):
     isActive: bool
     logo: str | None = None
     permissions: List[str]
+    isExpire: Optional[bool] = None
 
 
 class SINodeDTO(BaseModel):

@@ -1,3 +1,6 @@
+from app.domain.date.check_contract_expired import is_contract_isExpired
+
+
 def build_si_map(roles, perms_by_type):
     si_map: dict[int, dict] = {}
 
@@ -9,7 +12,7 @@ def build_si_map(roles, perms_by_type):
                 "id": r.si_id,
                 "name": r.si_name,
                 "logo": r.si_logo,
-                "isActive": bool(r.isActive),
+                "isActive": True,
                 "role": r.role_name,
                 "permissions": perms_by_type["si"],
                 "accessibleNode": [],
@@ -36,7 +39,10 @@ def build_si_map(roles, perms_by_type):
                     "name": r.org_name,
                     "role": r.role_name,
                     "logo": r.org_logo,
-                    "isActive": bool(r.isActive),
+                    "isActive": not r.org_disabled,
+                    "isExpire": (
+                        is_contract_isExpired(r.org_contract_start, r.org_contract_end)
+                    ),
                     "permissions": [r.perm_name],
                 }
             )

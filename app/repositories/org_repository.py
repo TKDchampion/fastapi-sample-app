@@ -29,14 +29,21 @@ def get_orgs_ids_by_si(db: Session, si_id: int, ids: list[int]):
 
 
 def get_all_orgs(db: Session):
-    return db.execute(
-        select(
-            OrganizationEntity.id,
-            OrganizationEntity.name,
-            OrganizationEntity.si_id,
-            OrganizationEntity.logo,
+    return (
+        db.execute(
+            select(
+                OrganizationEntity.id,
+                OrganizationEntity.name,
+                OrganizationEntity.si_id,
+                OrganizationEntity.logo,
+                OrganizationEntity.disabled,
+                OrganizationEntity.contract_start,
+                OrganizationEntity.contract_end,
+            )
         )
-    ).all()
+        .mappings()
+        .all()
+    )
 
 
 def get_by_name(db: Session, name: str) -> OrganizationEntity | None:

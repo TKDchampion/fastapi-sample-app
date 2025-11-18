@@ -2,7 +2,6 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.repositories import user_repository  # TODO: for test
 from app.services import user_service
 from app.dtos.user_dto import (
     UserAccessTreeResponseDTO,
@@ -39,11 +38,17 @@ def create_user(
 @router.get("/info_access", response_model=UserAccessTreeResponseDTO)
 def get_user_access_tree(
     db: Session = Depends(get_db),
-    user_info: UserReadDTO = Depends(token_required),
+    # user_info: UserReadDTO = Depends(token_required),
 ) -> UserAccessTreeResponseDTO:
     """
     Get current user access tree
     """
+    user_info = UserReadDTO(
+        id=2,
+        name="alice",
+        email="alice@kdanmobile.com",
+        picture="string",
+    )
     try:
         return user_service.get_user_access_tree(db, user_info)
     except HTTPException:
@@ -55,28 +60,3 @@ def get_user_access_tree(
             status_code=500,
             detail={"type": "error", "msg": "Unknown error"},
         )
-
-
-# @router.get("/{user_id}", response_model=UserAccessTreeResponseDTO)
-# def get_user_access_tree(
-#     user_id: int,
-#     db: Session = Depends(get_db),
-# ) -> UserAccessTreeResponseDTO:
-#     """
-#     test
-#     """
-#     try:
-#         user = user_repository.get_user(db, user_id)
-#         if not user:
-#             raise HTTPException(status_code=404, detail="User not found")
-
-#         return user_service.get_user_access_tree(db, user)
-#     except HTTPException:
-#         # 已是 HTTPException，直接拋出
-#         raise
-#     except Exception as e:
-#         logger.error("Exception message : %s", e, exc_info=True)
-#         raise HTTPException(
-#             status_code=500,
-#             detail={"type": "error", "msg": "Unknown error"},
-#         )

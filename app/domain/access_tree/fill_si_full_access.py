@@ -1,3 +1,4 @@
+from app.domain.date.check_contract_expired import is_contract_isExpired
 from app.repositories import org_repository
 
 
@@ -11,18 +12,21 @@ def fill_si_full_access(si_map: dict, perms_by_type, db):
 
     orgs_all = org_repository.get_all_orgs(db)
 
-    for oid, oname, sid_fk, ologo in orgs_all:
-        if sid_fk in full_si_ids:
-            exists = {o["id"] for o in si_map[sid_fk]["accessibleNode"]}
-            if oid not in exists:
-                si_map[sid_fk]["accessibleNode"].append(
+    for org in orgs_all:
+        if org.si_id in full_si_ids:
+            exists = {o["id"] for o in si_map[org.si_id]["accessibleNode"]}
+            if org.id not in exists:
+                si_map[org.si_id]["accessibleNode"].append(
                     {
                         "level": "org",
-                        "id": oid,
-                        "name": oname,
+                        "id": org.id,
+                        "name": org.name,
                         "role": "owner",
-                        "logo": ologo,
-                        "isActive": True,
+                        "logo": org.logo,
+                        "isActive": not org.disabled,
                         "permissions": perms_by_type["org"],
+                        "isExpire": is_contract_isExpired(
+                            org.contract_start, org.contract_end
+                        ),
                     }
                 )

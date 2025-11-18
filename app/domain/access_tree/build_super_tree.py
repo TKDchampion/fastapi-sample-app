@@ -1,4 +1,5 @@
 from collections import defaultdict
+from app.domain.date.check_contract_expired import is_contract_isExpired
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import si_repository
 
@@ -8,12 +9,29 @@ def build_super_tree(user, perms_by_type, result, db):
 
     si_map = defaultdict(lambda: {"name": "", "orgs": []})
 
-    for si_id, si_name, si_logo, org_id, org_name, org_logo in rows:
-        si_map[si_id]["name"] = si_name
-        si_map[si_id]["logo"] = si_logo
+    for row in rows:
+        sid = row["si_id"]
+        si_map[sid]["name"] = row["si_name"]
+        si_map[sid]["logo"] = row["si_logo"]
 
-        if org_id:
-            si_map[si_id]["orgs"].append((org_id, org_name, org_logo))
+        if row["org_id"]:
+            si_map[sid]["orgs"].append(
+                {
+                    "id": row["org_id"],
+                    "name": row["org_name"],
+                    "logo": row["org_logo"],
+                    "disabled": row["org_disabled"],
+                    "contract_start": row["org_contract_start"],
+                    "contract_end": row["org_contract_end"],
+                }
+            )
+
+    # for si_id, si_name, si_logo, org_id, org_name, org_logo in rows:
+    #     si_map[si_id]["name"] = si_name
+    #     si_map[si_id]["logo"] = si_logo
+
+    #     if org_id:
+    #         si_map[si_id]["orgs"].append((org_id, org_name, org_logo))
 
     for sid, data in si_map.items():
         result["accessibleNode"].append(
@@ -27,14 +45,19 @@ def build_super_tree(user, perms_by_type, result, db):
                 "accessibleNode": [
                     {
                         "level": "org",
-                        "id": oid,
-                        "name": oname,
+                        "id": org["id"],
+                        "name": org["name"],
                         "role": "owner",
-                        "isActive": True,
-                        "logo": ologo,
+                        "isActive": not org["disabled"],
+                        "logo": org["logo"],
                         "permissions": perms_by_type["org"],
+                        "isExpire": (
+                            is_contract_isExpired(
+                                org["contract_start"], org["contract_end"]
+                            )
+                        ),
                     }
-                    for oid, oname, ologo in data["orgs"]
+                    for org in data["orgs"]
                 ],
             }
         )

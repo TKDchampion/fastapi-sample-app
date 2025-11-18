@@ -37,7 +37,7 @@ def get_user_roles(db: Session, user_id: int):
             user_roles_table.c.scope_type,
             user_roles_table.c.scope_id,
             user_roles_table.c.role_id,
-            user_roles_table.c.isActive,
+            # user_roles_table.c.isActive,
         ).where(user_roles_table.c.user_id == user_id)
     ).all()
 
@@ -75,7 +75,7 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
             user_roles_table.c.scope_type,
             user_roles_table.c.scope_id,
             user_roles_table.c.role_id,
-            user_roles_table.c.isActive,
+            # user_roles_table.c.isActive,
             case(
                 (user_roles_table.c.scope_type == literal("si"), SI_scope.id),
                 else_=SI_of_org.id,
@@ -87,6 +87,9 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
             OrganizationEntity.id.label("org_id"),
             OrganizationEntity.name.label("org_name"),
             OrganizationEntity.logo.label("org_logo"),
+            OrganizationEntity.disabled.label("org_disabled"),
+            OrganizationEntity.contract_start.label("org_contract_start"),
+            OrganizationEntity.contract_end.label("org_contract_end"),
             SI_scope.logo.label("si_logo"),
             RoleEntity.name.label("role_name"),
             PermissionEntity.name.label("perm_name"),
