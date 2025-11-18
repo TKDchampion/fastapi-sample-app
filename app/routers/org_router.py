@@ -74,10 +74,40 @@ def upload_organization_logo(
 
 
 @si_router.post(
-    "/{si_id}/upsert/{org_id}",
+    "/{si_id}/org/create",
     response_model=OrgUpsertResponseDTO,
     summary="Create new organization under SI",
     description="Create a new organization under a given SI and upload logo to GCS.",
+)
+def upsert_organization(
+    si_id: int,
+    org: OrgUpsertRequestDTO,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> OrgUpsertResponseDTO:
+    """Create organization and upload logo to GCS"""
+    org_body: OrgUpsertParamDTO = org
+
+    try:
+        return org_service.upsert_organization_with_roles(
+            db, org_body, si_id, user_info
+        )
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Create organization error"},
+        )
+
+
+@si_router.put(
+    "/{si_id}/org/{org_id}/update",
+    response_model=OrgUpsertResponseDTO,
+    summary="Update new organization under SI",
+    description="Update a new organization under a given SI and upload logo to GCS.",
 )
 def upsert_organization(
     si_id: int,
