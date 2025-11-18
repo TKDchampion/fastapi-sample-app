@@ -83,24 +83,6 @@ def upsert_org(
     return org
 
 
-def update_user_role_is_active(
-    db: Session, user_id: int, org_id: int, new_is_active: bool
-):
-    stmt = (
-        update(user_roles_table)
-        .where(
-            user_roles_table.c.user_id == user_id,
-            user_roles_table.c.scope_type == "org",
-            user_roles_table.c.scope_id == org_id,
-        )
-        .values(isActive=new_is_active)
-    )
-    result = db.execute(stmt)
-    db.commit()
-
-    return result.rowcount
-
-
 def update_org_disabled(db: Session, org_id: int, disabled: bool):
     q = select(OrganizationEntity).where(OrganizationEntity.id == org_id)
     result = db.execute(q)

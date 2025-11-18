@@ -1,6 +1,5 @@
 import datetime
 from sqlalchemy import (
-    Boolean,
     CheckConstraint,
     DateTime,
     Index,
@@ -35,9 +34,8 @@ user_roles = Table(
     Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
     Column("scope_type", String, nullable=False),
     Column("scope_id", Integer, nullable=False),
-    Column("isActive", Boolean, nullable=True, default=None),
     PrimaryKeyConstraint("user_id", "role_id"),
-    UniqueConstraint("user_id", "role_id", "scope_type", "scope_id", "isActive"),
+    UniqueConstraint("user_id", "role_id", "scope_type", "scope_id"),
     CheckConstraint("scope_type IN ('super', 'si', 'org')"),
     Index("idx_user_roles_scope_type_scope_id", "scope_type", "scope_id"),
     Index("idx_user_roles_user_id", "user_id"),
