@@ -26,7 +26,7 @@ org_router = APIRouter(prefix="/org", tags=["Org"])
 si_router = APIRouter(prefix="/si", tags=["Org"])
 
 
-@si_router.get("/{si_id}/org/list/", response_model=OrgListResponseDTO)
+@si_router.get("/{si_id}/org/list", response_model=OrgListResponseDTO)
 def get_organizations_by_si_id(
     si_id: int,
     db: Session = Depends(get_db),
