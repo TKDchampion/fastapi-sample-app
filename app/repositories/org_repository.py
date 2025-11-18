@@ -1,6 +1,6 @@
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
-from app.dtos.org_dto import OrgUpsertRequestDTO
+from app.dtos.org_dto import OrgUpsertParamDTO
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
@@ -47,7 +47,7 @@ def get_by_name(db: Session, name: str) -> OrganizationEntity | None:
 
 def upsert_org(
     db: Session,
-    dto: OrgUpsertRequestDTO,
+    dto: OrgUpsertParamDTO,
     si_id: int,
     org_id: int | None = None,
 ) -> OrganizationEntity:

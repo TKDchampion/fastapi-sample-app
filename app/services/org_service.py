@@ -12,7 +12,7 @@ from app.repositories import (
     user_repository,
 )
 from app.dtos.org_dto import (
-    OrgUpsertRequestDTO,
+    OrgUpsertParamDTO,
     OrgUpsertResponseDTO,
     OrgListItemDTO,
     OrgListResponseDTO,
@@ -47,7 +47,7 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 
 def upsert_organization_with_roles(
-    db: Session, dto: OrgUpsertRequestDTO, si_id: int, user_info: UserReadDTO
+    db: Session, dto: OrgUpsertParamDTO, si_id: int, user_info: UserReadDTO
 ) -> OrgUpsertResponseDTO:
     try:
         if dto.org_id:

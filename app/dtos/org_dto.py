@@ -23,7 +23,7 @@ class OrgListResponseDTO(BaseModel):
     org: List[OrgListItemDTO] = Field(default_factory=list)
 
 
-class OrgUpsertRequestDTO(BaseModel):
+class OrgUpsertParamDTO(BaseModel):
     org_id: Optional[int] = None
     logo: str
     name: str
@@ -31,8 +31,13 @@ class OrgUpsertRequestDTO(BaseModel):
     contract_end: datetime
     business_modules: list[int]
 
-    # class Config:
-    #     orm_mode = True
+
+class OrgUpsertRequestDTO(BaseModel):
+    logo: str
+    name: str
+    contract_start: datetime
+    contract_end: datetime
+    business_modules: list[int]
 
 
 class OrgUpsertResponseDTO(BaseModel):

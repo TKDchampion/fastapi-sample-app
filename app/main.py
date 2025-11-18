@@ -65,7 +65,8 @@ Routers = [
     user_router.router,
     auth_router.router,
     si_router.router,
-    org_router.router,
+    org_router.org_router,
+    org_router.si_router,
     business_module_router.router,
 ]
 

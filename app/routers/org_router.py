@@ -1,10 +1,12 @@
 import logging
+from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.org_dto import (
     LogoUploadResponseDTO,
+    OrgUpsertParamDTO,
     OrgUpsertRequestDTO,
     OrgUpsertResponseDTO,
     OrgListResponseDTO,
@@ -20,10 +22,11 @@ from app.services.jwt_service import token_required
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(prefix="/org", tags=["Org"])
+org_router = APIRouter(prefix="/org", tags=["Org"])
+si_router = APIRouter(prefix="/si", tags=["Org"])
 
 
-@router.get("/list/{si_id}", response_model=OrgListResponseDTO)
+@si_router.get("/{si_id}/org/list/", response_model=OrgListResponseDTO)
 def get_organizations_by_si_id(
     si_id: int,
     db: Session = Depends(get_db),
@@ -45,8 +48,8 @@ def get_organizations_by_si_id(
         )
 
 
-@router.post(
-    "/upload-logo",
+@org_router.post(
+    "/upload_logo",
     summary="Upload organization logo to GCS",
     response_model=LogoUploadResponseDTO,
 )
@@ -70,8 +73,8 @@ def upload_organization_logo(
         )
 
 
-@router.post(
-    "/upsert/{si_id}",
+@si_router.post(
+    "/{si_id}/upsert/{org_id}",
     response_model=OrgUpsertResponseDTO,
     summary="Create new organization under SI",
     description="Create a new organization under a given SI and upload logo to GCS.",
@@ -79,13 +82,19 @@ def upload_organization_logo(
 def upsert_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
+    org_id: Optional[int] = None,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
+    org_body: OrgUpsertParamDTO = org
+    if org_id:
+        org_body.org_id = org_id
 
     try:
-        return org_service.upsert_organization_with_roles(db, org, si_id, user_info)
+        return org_service.upsert_organization_with_roles(
+            db, org_body, si_id, user_info
+        )
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
@@ -97,8 +106,8 @@ def upsert_organization(
         )
 
 
-@router.put(
-    "/is_active/{si_id}/{org_id}",
+@si_router.put(
+    "/{si_id}/org/{org_id}/is_active",
     response_model=TextResponseDTO,
     summary="Update org is_active",
     description="Update this org is_active",
