@@ -79,14 +79,14 @@ def upload_organization_logo(
     summary="Create new organization under SI",
     description="Create a new organization under a given SI and upload logo to GCS.",
 )
-def upsert_organization(
+def create_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
-    org_body: OrgUpsertParamDTO = org
+    org_body = OrgUpsertParamDTO(**org.model_dump(), org_id=None)
 
     try:
         return org_service.upsert_organization_with_roles(
@@ -109,7 +109,7 @@ def upsert_organization(
     summary="Update new organization under SI",
     description="Update a new organization under a given SI and upload logo to GCS.",
 )
-def upsert_organization(
+def update_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
     org_id: Optional[int] = None,
@@ -117,7 +117,8 @@ def upsert_organization(
     user_info: UserReadDTO = Depends(token_required),
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
-    org_body: OrgUpsertParamDTO = org
+    org_body = OrgUpsertParamDTO(**org.model_dump())
+
     if org_id:
         org_body.org_id = org_id
 
