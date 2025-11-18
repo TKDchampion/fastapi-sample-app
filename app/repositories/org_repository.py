@@ -99,3 +99,17 @@ def update_user_role_is_active(
     db.commit()
 
     return result.rowcount
+
+
+def update_org_disabled(db: Session, org_id: int, disabled: bool):
+    q = select(OrganizationEntity).where(OrganizationEntity.id == org_id)
+    result = db.execute(q)
+    org = result.scalars().first()
+
+    if not org:
+        raise ValueError(f"Organization {org_id} not found")
+
+    org.disabled = disabled
+    db.commit()
+    db.refresh(org)
+    return org

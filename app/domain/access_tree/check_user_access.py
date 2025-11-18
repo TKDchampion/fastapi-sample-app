@@ -37,9 +37,7 @@ def can_write_org(access_tree: dict, params: OrgWriteParams) -> bool:
 
         # 修改 Org：檢查 Org 層級權限
         for org_node in si_node.get("accessibleNode", []):
-            print(org_node)
             if org_node["id"] == org_id and org_node["isActive"]:
-                print(perm, org_node.get("permissions", []))
                 return perm in org_node.get("permissions", [])
 
     return False

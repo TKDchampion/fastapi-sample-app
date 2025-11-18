@@ -38,17 +38,17 @@ def create_user(
 @router.get("/info_access", response_model=UserAccessTreeResponseDTO)
 def get_user_access_tree(
     db: Session = Depends(get_db),
-    # user_info: UserReadDTO = Depends(token_required),
+    user_info: UserReadDTO = Depends(token_required),
 ) -> UserAccessTreeResponseDTO:
     """
     Get current user access tree
     """
-    user_info = UserReadDTO(
-        id=2,
-        name="alice",
-        email="alice@kdanmobile.com",
-        picture="string",
-    )
+    # user_info = UserReadDTO(
+    #     id=1,
+    #     name="giant",
+    #     email="giant@kdanmobile.com",
+    #     picture="string",
+    # )
     try:
         return user_service.get_user_access_tree(db, user_info)
     except HTTPException:

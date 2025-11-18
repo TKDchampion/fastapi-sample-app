@@ -107,23 +107,23 @@ def upsert_organization(
 
 
 @si_router.put(
-    "/{si_id}/org/{org_id}/is_active",
+    "/{si_id}/org/{org_id}/disabled",
     response_model=TextResponseDTO,
-    summary="Update org is_active",
-    description="Update this org is_active",
+    summary="Update org disabled",
+    description="Update this org disabled",
 )
 def upsert_organization(
     si_id: int,
     org_id: int,
-    is_active: bool,
+    disabled: bool,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ) -> TextResponseDTO:
     """Create organization and upload logo to GCS"""
 
     try:
-        return org_service.update_organization_isActive_with_roles(
-            db, user_info, si_id, org_id, is_active
+        return org_service.update_organization_disabled(
+            db, user_info, si_id, org_id, disabled
         )
     except HTTPException:
         # 已是 HTTPException，直接拋出

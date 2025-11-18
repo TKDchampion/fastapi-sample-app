@@ -26,13 +26,6 @@ def build_super_tree(user, perms_by_type, result, db):
                 }
             )
 
-    # for si_id, si_name, si_logo, org_id, org_name, org_logo in rows:
-    #     si_map[si_id]["name"] = si_name
-    #     si_map[si_id]["logo"] = si_logo
-
-    #     if org_id:
-    #         si_map[si_id]["orgs"].append((org_id, org_name, org_logo))
-
     for sid, data in si_map.items():
         result["accessibleNode"].append(
             {

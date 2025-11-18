@@ -95,28 +95,26 @@ def upsert_organization_with_roles(
         )
 
 
-def update_organization_isActive_with_roles(
-    db: Session, user_info: UserReadDTO, si_id: int, org_id: int, is_active: bool
+def update_organization_disabled(
+    db: Session, user_info: UserReadDTO, si_id: int, org_id: int, disabled: bool
 ):
     try:
         params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
         verify_org_write_permission(db, user_info, params)
-        rows_updated = org_repository.update_user_role_is_active(
-            db, user_info.id, org_id, is_active
-        )
+        org = org_repository.update_org_disabled(db, org_id, disabled)
 
-        if rows_updated == 0:
+        if not org:
             raise HTTPException(
-                status_code=404,
+                status_code=401,
                 detail={
                     "type": "error",
-                    "msg": f"No user_role found for user_id={user_info.id}, org_id={org_id}",
+                    "msg": f"No org access",
                 },
             )
 
         return TextResponseDTO(
             status="success",
-            message=f"User role updated successfully for org_id={org_id}, isActive={is_active}",
+            message=f"Org updated successfully for org_id={org_id}, disabled={disabled}",
         )
 
     except HTTPException:
