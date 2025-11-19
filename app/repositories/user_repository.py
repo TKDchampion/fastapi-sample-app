@@ -75,7 +75,6 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
             user_roles_table.c.scope_type,
             user_roles_table.c.scope_id,
             user_roles_table.c.role_id,
-            # user_roles_table.c.isActive,
             case(
                 (user_roles_table.c.scope_type == literal("si"), SI_scope.id),
                 else_=SI_of_org.id,

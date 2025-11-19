@@ -105,7 +105,7 @@ def update_organization_disabled(
 
         if not org:
             raise HTTPException(
-                status_code=401,
+                status_code=403,
                 detail={
                     "type": "error",
                     "msg": f"No org access",

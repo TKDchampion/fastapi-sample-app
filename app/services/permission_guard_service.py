@@ -19,6 +19,6 @@ def verify_org_write_permission(
     access_tree = get_user_access_tree(db, user)
 
     if not can_write_org(access_tree, params):
-        raise HTTPException(status_code=401, detail="Insufficient permission")
+        raise HTTPException(status_code=403, detail="Insufficient permission")
 
     return True
