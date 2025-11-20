@@ -7,7 +7,11 @@ from app.entities.business_module_entity import BusinessModuleEntity
 
 
 def get_business_modules(db: Session):
-    return db.execute(select(BusinessModuleEntity)).scalars().all()
+    return (
+        db.execute(select(BusinessModuleEntity.id, BusinessModuleEntity.name))
+        .mappings()
+        .all()
+    )
 
 
 def add_org_business_module(db: Session, org_id: int, module_ids: list[int]):

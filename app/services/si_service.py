@@ -18,6 +18,6 @@ def get_user_si(db: Session, user_id: int):
     if not sis:
         return SIListResponseDTO(si=[])
 
-    items = [SIListItemDTO.model_validate(row) for row in sis]
+    items = [SIListItemDTO(**row) for row in sis]
 
     return SIListResponseDTO(si=items)

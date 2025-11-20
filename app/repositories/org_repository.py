@@ -11,8 +11,19 @@ from app.entities.user_entity import UserEntity
 
 def get_orgs_by_sid(db: Session, si_id: int):
     return (
-        db.execute(select(OrganizationEntity).where(OrganizationEntity.si_id == si_id))
-        .scalars()
+        db.execute(
+            select(
+                OrganizationEntity.id,
+                OrganizationEntity.name,
+                OrganizationEntity.logo,
+                OrganizationEntity.disabled,
+                OrganizationEntity.contract_start,
+                OrganizationEntity.contract_end,
+                OrganizationEntity.created_at,
+                OrganizationEntity.updated_at,
+            ).where(OrganizationEntity.si_id == si_id)
+        )
+        .mappings()
         .all()
     )
 
@@ -20,17 +31,21 @@ def get_orgs_by_sid(db: Session, si_id: int):
 def get_orgs_by_sid_oids(db: Session, si_id: int, ids: list[int]):
     return (
         db.execute(
-            select(OrganizationEntity)
-            .options(
-                noload(OrganizationEntity.business_modules),
-                # selectinload(OrganizationEntity.business_modules)
-            )
-            .where(
+            select(
+                OrganizationEntity.id,
+                OrganizationEntity.name,
+                OrganizationEntity.logo,
+                OrganizationEntity.disabled,
+                OrganizationEntity.contract_start,
+                OrganizationEntity.contract_end,
+                OrganizationEntity.created_at,
+                OrganizationEntity.updated_at,
+            ).where(
                 OrganizationEntity.si_id == si_id,
                 OrganizationEntity.id.in_(ids),
             )
         )
-        .scalars()
+        .mappings()
         .all()
     )
 
@@ -63,12 +78,6 @@ def get_all_orgs(db: Session):
         .mappings()
         .all()
     )
-
-
-def get_by_name(db: Session, name: str) -> OrganizationEntity | None:
-    stmt = select(OrganizationEntity).where(OrganizationEntity.name == name)
-    result = db.execute(stmt)
-    return result.scalars().first()
 
 
 def upsert_org(

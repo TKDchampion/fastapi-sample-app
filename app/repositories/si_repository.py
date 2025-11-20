@@ -5,7 +5,16 @@ from app.entities.si_entity import SIEntity
 
 
 def get_si_all(db: Session):
-    return db.execute(select(SIEntity)).scalars().all()
+    stmt = select(
+        SIEntity.id,
+        SIEntity.name,
+        SIEntity.logo,
+        SIEntity.disabled,
+        SIEntity.created_at,
+        SIEntity.updated_at,
+    )
+
+    return db.execute(stmt).mappings().all()
 
 
 def get_si_org_tree(db: Session):

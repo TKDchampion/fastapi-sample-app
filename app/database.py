@@ -21,7 +21,7 @@ if not DATABASE_URL:
 
 engine = create_engine(
     DATABASE_URL,
-    # echo=True, //debugger
+    echo=True,
     pool_pre_ping=True,
     pool_recycle=300,
     pool_size=5,

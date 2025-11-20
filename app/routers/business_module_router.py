@@ -16,7 +16,7 @@ router = APIRouter(prefix="/business_module", tags=["business_module"])
 
 
 @router.get("/list", response_model=List[BusinessModuleDTO])
-def get_user_si(
+def get_business_module(
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ):
