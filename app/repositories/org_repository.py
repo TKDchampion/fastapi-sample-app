@@ -1,5 +1,5 @@
-from sqlalchemy import and_, or_, select, update
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_, select
+from sqlalchemy.orm import Session, noload, selectinload
 from app.dtos.org_dto import OrgUpsertParamDTO
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.associations_entity import (
@@ -9,7 +9,7 @@ from app.entities.role_entity import RoleEntity
 from app.entities.user_entity import UserEntity
 
 
-def get_orgs_by_si_id(db: Session, si_id: int):
+def get_orgs_by_sid(db: Session, si_id: int):
     return (
         db.execute(select(OrganizationEntity).where(OrganizationEntity.si_id == si_id))
         .scalars()
@@ -17,10 +17,15 @@ def get_orgs_by_si_id(db: Session, si_id: int):
     )
 
 
-def get_orgs_ids_by_si(db: Session, si_id: int, ids: list[int]):
+def get_orgs_by_sid_oids(db: Session, si_id: int, ids: list[int]):
     return (
         db.execute(
-            select(OrganizationEntity).where(
+            select(OrganizationEntity)
+            .options(
+                noload(OrganizationEntity.business_modules),
+                # selectinload(OrganizationEntity.business_modules)
+            )
+            .where(
                 OrganizationEntity.si_id == si_id,
                 OrganizationEntity.id.in_(ids),
             )
@@ -28,6 +33,18 @@ def get_orgs_ids_by_si(db: Session, si_id: int, ids: list[int]):
         .scalars()
         .all()
     )
+
+
+def get_org_by_sid_oid(db: Session, si_id: int, org_id: int):
+    stmt = (
+        select(OrganizationEntity)
+        .options(selectinload(OrganizationEntity.business_modules))
+        .where(
+            OrganizationEntity.si_id == si_id,
+            OrganizationEntity.id == org_id,
+        )
+    )
+    return db.execute(stmt).scalar_one_or_none()
 
 
 def get_all_orgs(db: Session):

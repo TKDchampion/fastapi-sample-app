@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.dtos.business_module_dto import BusinessModuleDTO
 
 
-class OrgListItemDTO(BaseModel):
+class OrgDetailDTO(BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
@@ -15,6 +15,19 @@ class OrgListItemDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
     business_modules: list[BusinessModuleDTO] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrgListItemDTO(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+    disabled: bool
+    contract_start: datetime
+    contract_end: datetime
+    created_at: datetime
+    updated_at: datetime
 
 
 class OrgListResponseDTO(BaseModel):

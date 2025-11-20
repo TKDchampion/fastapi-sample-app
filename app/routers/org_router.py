@@ -6,6 +6,7 @@ from app.database import get_db
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.org_dto import (
     LogoUploadResponseDTO,
+    OrgDetailDTO,
     OrgUpsertParamDTO,
     OrgUpsertRequestDTO,
     OrgUpsertResponseDTO,
@@ -51,7 +52,6 @@ def get_organizations_by_si_id(
 
 @org_router.post(
     "/upload_logo",
-    summary="Upload organization logo to GCS",
     response_model=LogoUploadResponseDTO,
 )
 def upload_organization_logo(
@@ -70,15 +70,13 @@ def upload_organization_logo(
         logger.error("Exception message : %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"type": "error", "msg": "Create organization error"},
+            detail={"type": "error", "msg": "Upload organization logo error"},
         )
 
 
 @si_router.post(
     "/{si_id}/org/create",
     response_model=OrgUpsertResponseDTO,
-    summary="Create new organization under SI",
-    description="Create a new organization under a given SI and upload logo to GCS.",
 )
 def create_organization(
     si_id: int,
@@ -107,8 +105,6 @@ def create_organization(
 @si_router.put(
     "/{si_id}/org/{org_id}/update",
     response_model=OrgUpsertResponseDTO,
-    summary="Update new organization under SI",
-    description="Update a new organization under a given SI and upload logo to GCS.",
 )
 def update_organization(
     si_id: int,
@@ -141,8 +137,6 @@ def update_organization(
 @si_router.put(
     "/{si_id}/org/{org_id}/disabled",
     response_model=TextResponseDTO,
-    summary="Update org disabled",
-    description="Update this org disabled",
 )
 def upsert_organization(
     si_id: int,
@@ -151,7 +145,7 @@ def upsert_organization(
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ) -> TextResponseDTO:
-    """Create organization and upload logo to GCS"""
+    """Update organization and upload logo to GCS"""
 
     try:
         return org_service.update_organization_disabled(
@@ -164,17 +158,18 @@ def upsert_organization(
         logger.error("Exception message : %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"type": "error", "msg": "Create organization error"},
+            detail={"type": "error", "msg": "Update organization error"},
         )
 
 
-@si_router.get("/{si_id}/org/{org_id}", response_model=list[UserRolesResponseDTO])
+@si_router.get("/{si_id}/org/{org_id}/users", response_model=list[UserRolesResponseDTO])
 def get_users_by_si_and_org(
     si_id: int,
     org_id: int,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ):
+    """Get organization users"""
 
     try:
         return org_service.get_users_by_si_and_org(db, si_id, org_id, user_info)
@@ -185,5 +180,27 @@ def get_users_by_si_and_org(
         logger.error("Exception message : %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"type": "error", "msg": "Create organization error"},
+            detail={"type": "error", "msg": "Get organization users error"},
+        )
+
+
+@si_router.get("/{si_id}/org/{org_id}/detail", response_model=OrgDetailDTO)
+def get_org_by_sid_oid(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    """Get organization detail"""
+
+    try:
+        return org_service.get_org_by_sid_oid(db, si_id, org_id, user_info)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Get organization detail error"},
         )

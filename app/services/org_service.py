@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import OrgWriteParams
+from app.dtos.business_module_dto import BusinessModuleDTO
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
 from app.repositories import (
@@ -12,6 +13,7 @@ from app.repositories import (
     user_repository,
 )
 from app.dtos.org_dto import (
+    OrgDetailDTO,
     OrgUpsertParamDTO,
     OrgUpsertResponseDTO,
     OrgListItemDTO,
@@ -31,12 +33,12 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
     )
 
     if has_si_or_super_scope:
-        orgs = org_repository.get_orgs_by_si_id(db, si_id)
+        orgs = org_repository.get_orgs_by_sid(db, si_id)
     else:
         allowed_org_ids = [r.scope_id for r in user_roles if r.scope_type == "org"]
         if not allowed_org_ids:
             return OrgListResponseDTO(org=[])
-        orgs = org_repository.get_orgs_ids_by_si(db, si_id, allowed_org_ids)
+        orgs = org_repository.get_orgs_by_sid_oids(db, si_id, allowed_org_ids)
 
     if not orgs:
         return OrgListResponseDTO(org=[])
@@ -51,12 +53,29 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
             contract_end=org.contract_end,
             created_at=org.created_at,
             updated_at=org.updated_at,
-            business_modules=[],
         )
         for org in orgs
     ]
 
     return OrgListResponseDTO(org=items)
+
+
+def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserReadDTO):
+    try:
+        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
+        verify_org_write_permission(db, user_info, params)
+
+        detail = org_repository.get_org_by_sid_oid(db, si_id, org_id)
+
+        if detail is None:
+            raise HTTPException(
+                status_code=500,
+                detail={"type": "not_found", "msg": "Not found"},
+            )
+
+        return OrgDetailDTO.model_validate(detail)
+    except HTTPException:
+        raise
 
 
 def upsert_organization_with_roles(
@@ -99,13 +118,6 @@ def upsert_organization_with_roles(
             status_code=500,
             detail={"type": "error", "msg": "db create error"},
         )
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "create or update organization error"},
-        )
 
 
 def update_organization_disabled(
@@ -147,13 +159,6 @@ def update_organization_disabled(
             status_code=500,
             detail={"type": "error", "msg": "db create error"},
         )
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "create organization error"},
-        )
 
 
 def get_users_by_si_and_org(
@@ -162,14 +167,14 @@ def get_users_by_si_and_org(
     try:
         params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="member.view")
         verify_org_write_permission(db, user_info, params)
-        si_org_ids = org_repository.get_orgs_by_si_id(db, si_id)
+        si_org_ids = org_repository.get_orgs_by_sid(db, si_id)
         org_ids = [org.id for org in si_org_ids]
         is_org_under_si = org_id in org_ids
 
         if not is_org_under_si:
             raise HTTPException(
                 status_code=404,
-                detail={"type": "Not Found", "msg": f"Not Found Organization {org_id}"},
+                detail={"type": "not_found", "msg": f"Not Found Organization {org_id}"},
             )
 
         users = org_repository.get_users_by_si_and_org(db, si_id, org_id)
@@ -209,9 +214,3 @@ def get_users_by_si_and_org(
         return list(user_map.values())
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": f"get users from org error{e}"},
-        )
