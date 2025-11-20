@@ -134,6 +134,7 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
         .outerjoin(RoleEntity, RoleEntity.id == UR.c.role_id)
         .where(
             or_(
+                and_(UR.c.scope_type == "super", UR.c.scope_id == 0),
                 and_(UR.c.scope_type == "si", UR.c.scope_id == si_id),
                 and_(UR.c.scope_type == "org", UR.c.scope_id == org_id),
             )
