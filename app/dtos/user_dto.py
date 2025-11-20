@@ -1,6 +1,7 @@
-from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.dtos.role_dto import RoleDTO
 
 
 class UserCreateDTO(BaseModel):
@@ -49,3 +50,13 @@ class PermissionTreeDTO(BaseModel):
 class UserAccessTreeResponseDTO(BaseModel):
     user: UserReadDTO
     permissionTree: PermissionTreeDTO
+
+
+class UserRolesResponseDTO(BaseModel):
+    user_id: int
+    name: str
+    email: str
+    picture: str | None = None
+    role_name: str
+
+    model_config = ConfigDict(from_attributes=True)

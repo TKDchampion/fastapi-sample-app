@@ -14,6 +14,7 @@ from app.dtos.org_dto import (
 from app.services import org_service
 from app.dtos.user_dto import (
     UserReadDTO,
+    UserRolesResponseDTO,
 )
 from app.services.gcs_uploader import upload_logo_to_gcs
 from app.services.jwt_service import token_required
@@ -156,6 +157,22 @@ def upsert_organization(
         return org_service.update_organization_disabled(
             db, user_info, si_id, org_id, disabled
         )
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Create organization error"},
+        )
+
+
+@si_router.get("/{si_id}/org/{org_id}", response_model=list[UserRolesResponseDTO])
+def get_users_by_si_and_org(si_id: int, org_id: int, db: Session = Depends(get_db)):
+
+    try:
+        return org_service.get_users_by_si_and_org(db, si_id, org_id)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

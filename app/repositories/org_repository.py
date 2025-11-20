@@ -1,10 +1,12 @@
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, select, update
+from sqlalchemy.orm import Session, joinedload
 from app.dtos.org_dto import OrgUpsertParamDTO
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
 )
+from app.entities.role_entity import RoleEntity
+from app.entities.user_entity import UserEntity
 
 
 def get_orgs_by_si_id(db: Session, si_id: int):
@@ -95,3 +97,30 @@ def update_org_disabled(db: Session, org_id: int, disabled: bool):
     db.commit()
     db.refresh(org)
     return org
+
+
+def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
+    UR = user_roles_table.alias("ur")
+
+    stmt = (
+        select(
+            UserEntity.id.label("user_id"),
+            UserEntity.name,
+            UserEntity.email,
+            UserEntity.picture,
+            RoleEntity.id.label("role_id"),
+            RoleEntity.name.label("role_name"),
+            RoleEntity.description.label("role_desc"),
+        )
+        .select_from(UserEntity)
+        .join(UR, UR.c.user_id == UserEntity.id)
+        .outerjoin(RoleEntity, RoleEntity.id == UR.c.role_id)
+        .where(
+            or_(
+                and_(UR.c.scope_type == "si", UR.c.scope_id == si_id),
+                and_(UR.c.scope_type == "org", UR.c.scope_id == org_id),
+            )
+        )
+    )
+
+    return db.execute(stmt).all()

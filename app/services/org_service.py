@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import OrgWriteParams
 from app.dtos.common_dto import TextResponseDTO
-from app.dtos.user_dto import UserReadDTO
+from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
 from app.repositories import (
     business_module_repository,
     org_repository,
@@ -140,4 +140,56 @@ def update_organization_disabled(
         raise HTTPException(
             status_code=500,
             detail={"type": "error", "msg": "create organization error"},
+        )
+
+
+# def get_users_by_si_and_org(
+#     db: Session, si_id: int, org_id: int, user_info: UserReadDTO
+# ):
+def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
+    try:
+        # params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="member.view")
+        # verify_org_write_permission(db, user_info, params)
+        users = org_repository.get_users_by_si_and_org(db, si_id, org_id)
+
+        user_map = {}
+
+        for user in users:
+            user_id = user.user_id
+
+            role_name = user.role_name or "owner"
+
+            if user_id in user_map:
+                if user_map[user_id]["role_name"] == "owner":
+                    continue
+
+                if role_name == "owner":
+                    user_map[user_id] = {
+                        "user_id": user.user_id,
+                        "name": user.name,
+                        "email": user.email,
+                        "picture": user.picture,
+                        "role_name": "owner",
+                    }
+                    continue
+
+                # 否則 role_name 不是 owner → 如果 user 沒 owner，保持第一個
+                continue
+
+            user_map[user_id] = {
+                "user_id": user.user_id,
+                "name": user.name,
+                "email": user.email,
+                "picture": user.picture,
+                "role_name": role_name,
+            }
+
+        return list(user_map.values())
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": f"get users from org error{e}"},
         )

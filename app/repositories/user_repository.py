@@ -8,6 +8,7 @@ from app.entities.user_entity import UserEntity
 from app.dtos.user_dto import UserCreateDTO
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
+    role_permissions as role_permissions_table,
 )
 
 
@@ -94,8 +95,15 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
             PermissionEntity.name.label("perm_name"),
             PermissionEntity.type.label("perm_type"),
         )
-        .join(RoleEntity, RoleEntity.id == user_roles_table.c.role_id)
-        .join(RoleEntity.permissions)
+        .outerjoin(RoleEntity, RoleEntity.id == user_roles_table.c.role_id)
+        .outerjoin(
+            role_permissions_table,
+            role_permissions_table.c.role_id == RoleEntity.id,
+        )
+        .outerjoin(
+            PermissionEntity,
+            PermissionEntity.id == role_permissions_table.c.permission_id,
+        )
         # scope_type = 'si' → 直接用 scope_id 對 si
         .outerjoin(
             SI_scope,
