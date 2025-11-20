@@ -143,13 +143,22 @@ def update_organization_disabled(
         )
 
 
-# def get_users_by_si_and_org(
-#     db: Session, si_id: int, org_id: int, user_info: UserReadDTO
-# ):
-def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
+def get_users_by_si_and_org(
+    db: Session, si_id: int, org_id: int, user_info: UserReadDTO
+):
     try:
-        # params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="member.view")
-        # verify_org_write_permission(db, user_info, params)
+        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="member.view")
+        verify_org_write_permission(db, user_info, params)
+        si_org_ids = org_repository.get_orgs_by_si_id(db, si_id)
+        org_ids = [org.id for org in si_org_ids]
+        is_org_under_si = org_id in org_ids
+
+        if not is_org_under_si:
+            raise HTTPException(
+                status_code=404,
+                detail={"type": "Not Found", "msg": f"Not Found Organization {org_id}"},
+            )
+
         users = org_repository.get_users_by_si_and_org(db, si_id, org_id)
 
         user_map = {}

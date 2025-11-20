@@ -169,10 +169,15 @@ def upsert_organization(
 
 
 @si_router.get("/{si_id}/org/{org_id}", response_model=list[UserRolesResponseDTO])
-def get_users_by_si_and_org(si_id: int, org_id: int, db: Session = Depends(get_db)):
+def get_users_by_si_and_org(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
 
     try:
-        return org_service.get_users_by_si_and_org(db, si_id, org_id)
+        return org_service.get_users_by_si_and_org(db, si_id, org_id, user_info)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise
