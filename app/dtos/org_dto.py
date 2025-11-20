@@ -16,8 +16,6 @@ class OrgListItemDTO(BaseModel):
     updated_at: datetime
     business_modules: list[BusinessModuleDTO] = []
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class OrgListResponseDTO(BaseModel):
     org: List[OrgListItemDTO] = Field(default_factory=list)
@@ -50,8 +48,6 @@ class OrgUpsertResponseDTO(BaseModel):
     business_modules: List[int] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class LogoUploadResponseDTO(BaseModel):

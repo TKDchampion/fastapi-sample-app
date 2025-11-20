@@ -55,7 +55,9 @@ def decode_access_token(token: str, db: Session):
                 detail={"msg": "User not found", "type": "token_invalid"},
             )
 
-        return UserReadDTO.model_validate(user, from_attributes=True)
+        return UserReadDTO(
+            id=user.id, name=user.name, email=user.email, picture=user.picture
+        )
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(

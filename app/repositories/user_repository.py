@@ -38,7 +38,6 @@ def get_user_roles(db: Session, user_id: int):
             user_roles_table.c.scope_type,
             user_roles_table.c.scope_id,
             user_roles_table.c.role_id,
-            # user_roles_table.c.isActive,
         ).where(user_roles_table.c.user_id == user_id)
     ).all()
 

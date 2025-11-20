@@ -11,8 +11,6 @@ class SIListItemDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class SIListResponseDTO(BaseModel):
     si: List[SIListItemDTO] = Field(default_factory=list)

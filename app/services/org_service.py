@@ -41,7 +41,20 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
     if not orgs:
         return OrgListResponseDTO(org=[])
 
-    items = [OrgListItemDTO.model_validate(org, from_attributes=True) for org in orgs]
+    items = [
+        OrgListItemDTO(
+            id=org.id,
+            name=org.name,
+            logo=org.logo,
+            disabled=org.disabled,
+            contract_start=org.contract_start,
+            contract_end=org.contract_end,
+            created_at=org.created_at,
+            updated_at=org.updated_at,
+            business_modules=[],
+        )
+        for org in orgs
+    ]
 
     return OrgListResponseDTO(org=items)
 
@@ -66,7 +79,7 @@ def upsert_organization_with_roles(
         db.commit()
         db.refresh(org)
         return OrgUpsertResponseDTO.model_validate(
-            {**org.__dict__, "business_modules": business_modules}, from_attributes=True
+            {**org.__dict__, "business_modules": business_modules}
         )
 
     except HTTPException:

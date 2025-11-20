@@ -15,9 +15,6 @@ class UserReadDTO(BaseModel):
     email: str
     picture: str | None = None
 
-    class Config:
-        from_attributes = True
-
 
 class OrgNodeDTO(BaseModel):
     level: str = Field(default="org")
@@ -58,5 +55,3 @@ class UserRolesResponseDTO(BaseModel):
     email: str
     picture: str | None = None
     role_name: str
-
-    model_config = ConfigDict(from_attributes=True)
