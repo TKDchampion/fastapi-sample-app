@@ -1,19 +1,18 @@
-from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.dtos.business_module_dto import BusinessModuleDTO
+from app.dtos.date_mixins import DateOnlySerializerMixin
+from app.dtos.types import DateLikeDatetime
 
 
-class OrgDetailDTO(BaseModel):
+class OrgDetailDTO(DateOnlySerializerMixin, BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
     disabled: bool
-    contract_start: datetime
-    contract_end: datetime
-    created_at: datetime
-    updated_at: datetime
+    contract_start: DateLikeDatetime
+    contract_end: DateLikeDatetime
     business_modules: list[BusinessModuleDTO] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -27,48 +26,44 @@ class OrgDetailDTO(BaseModel):
         return [m.id for m in modules]
 
 
-class OrgListItemDTO(BaseModel):
+class OrgListItemDTO(DateOnlySerializerMixin, BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
     disabled: bool
-    contract_start: datetime
-    contract_end: datetime
-    created_at: datetime
-    updated_at: datetime
+    contract_start: DateLikeDatetime
+    contract_end: DateLikeDatetime
 
 
 class OrgListResponseDTO(BaseModel):
     org: List[OrgListItemDTO] = Field(default_factory=list)
 
 
-class OrgUpsertParamDTO(BaseModel):
+class OrgUpsertParamDTO(DateOnlySerializerMixin, BaseModel):
     org_id: Optional[int] = None
     logo: str
     name: str
-    contract_start: datetime
-    contract_end: datetime
+    contract_start: DateLikeDatetime
+    contract_end: DateLikeDatetime
     business_modules: list[int]
 
 
 class OrgUpsertRequestDTO(BaseModel):
     logo: str
     name: str
-    contract_start: datetime
-    contract_end: datetime
+    contract_start: DateLikeDatetime
+    contract_end: DateLikeDatetime
     business_modules: list[int]
 
 
-class OrgUpsertResponseDTO(BaseModel):
+class OrgUpsertResponseDTO(DateOnlySerializerMixin, BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
     disabled: bool
-    contract_start: datetime
-    contract_end: datetime
+    contract_start: DateLikeDatetime
+    contract_end: DateLikeDatetime
     business_modules: List[int] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
 
 
 class LogoUploadResponseDTO(BaseModel):

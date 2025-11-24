@@ -1,3 +1,4 @@
+from datetime import datetime, time, timezone
 import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -86,6 +87,12 @@ def create_organization(
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
     org_body = OrgUpsertParamDTO(**org.model_dump(), org_id=None)
+    start_dt = datetime.combine(org.contract_start, time.min).replace(
+        tzinfo=timezone.utc
+    )
+    end_dt = datetime.combine(org.contract_end, time.max).replace(tzinfo=timezone.utc)
+    org_body.contract_start = start_dt
+    org_body.contract_end = end_dt
 
     try:
         return org_service.upsert_organization_with_roles(
@@ -115,6 +122,12 @@ def update_organization(
 ) -> OrgUpsertResponseDTO:
     """Create organization and upload logo to GCS"""
     org_body = OrgUpsertParamDTO(**org.model_dump())
+    start_dt = datetime.combine(org.contract_start, time.min).replace(
+        tzinfo=timezone.utc
+    )
+    end_dt = datetime.combine(org.contract_end, time.max).replace(tzinfo=timezone.utc)
+    org_body.contract_start = start_dt
+    org_body.contract_end = end_dt
 
     if org_id:
         org_body.org_id = org_id
