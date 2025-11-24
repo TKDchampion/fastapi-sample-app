@@ -3,7 +3,7 @@ import os
 from fastapi import HTTPException, UploadFile
 from google.cloud import storage
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from google.api_core.exceptions import GoogleAPIError
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
@@ -25,9 +25,7 @@ def upload_logo_to_gcs(file: UploadFile) -> str:
         bucket = storage_client.bucket(BUCKET_NAME)
 
         ext = file.filename.split(".")[-1] if "." in file.filename else "png"
-        blob_name = (
-            f"{ORG_LOGO_FOLDER}/{datetime.utcnow().strftime('%Y%m%d')}/{uuid4()}.{ext}"
-        )
+        blob_name = f"{ORG_LOGO_FOLDER}/{datetime.now(timezone.utc).strftime('%Y%m%d')}/{uuid4()}.{ext}"
 
         blob = bucket.blob(blob_name)
         blob.upload_from_file(file.file, content_type=file.content_type)

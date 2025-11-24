@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from sqlalchemy import String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -13,7 +13,9 @@ class BusinessModuleEntity(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, server_default=func.now()
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
     )
 
     organizations: Mapped[List["OrganizationEntity"]] = relationship(

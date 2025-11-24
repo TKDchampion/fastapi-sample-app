@@ -9,7 +9,6 @@ from sqlalchemy import (
     Table,
     Column,
     ForeignKey,
-    UniqueConstraint,
     func,
 )
 from app.database import Base
@@ -91,8 +90,8 @@ org_business_modules = Table(
     ),
     Column(
         "enabled_at",
-        DateTime,
-        default=datetime.datetime.utcnow(),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(datetime.timezone.utc),
         server_default=func.now(),
     ),
 )

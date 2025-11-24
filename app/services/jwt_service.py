@@ -1,6 +1,6 @@
 # app/services/jwt_service.py
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt, JWTError
 from fastapi import HTTPException, Depends, Request
@@ -28,7 +28,9 @@ if not SECRET_KEY:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
     token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return token
