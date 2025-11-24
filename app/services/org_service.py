@@ -52,7 +52,6 @@ def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserRead
     try:
         params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
         verify_org_write_permission(db, user_info, params)
-
         detail = org_repository.get_org_by_sid_oid(db, si_id, org_id)
 
         if detail is None:

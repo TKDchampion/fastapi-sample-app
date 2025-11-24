@@ -25,7 +25,7 @@ def fill_si_full_access(si_map: dict, perms_by_type, db):
                         "logo": org.logo,
                         "isActive": not org.disabled,
                         "permissions": perms_by_type["org"],
-                        "isExpire": is_contract_isExpired(
+                        "isContractLive": is_contract_isExpired(
                             org.contract_start, org.contract_end
                         ),
                     }

@@ -44,7 +44,7 @@ def build_super_tree(user, perms_by_type, result, db):
                         "isActive": not org["disabled"],
                         "logo": org["logo"],
                         "permissions": perms_by_type["org"],
-                        "isExpire": (
+                        "isContractLive": (
                             is_contract_isExpired(
                                 org["contract_start"], org["contract_end"]
                             )

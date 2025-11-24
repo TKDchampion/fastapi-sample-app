@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from app.dtos.business_module_dto import BusinessModuleDTO
 
@@ -17,6 +17,14 @@ class OrgDetailDTO(BaseModel):
     business_modules: list[BusinessModuleDTO] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("business_modules")
+    def serialize_business_modules(self, modules: list[BusinessModuleDTO]):
+        """
+        把 [BusinessModuleDTO(...), BusinessModuleDTO(...)]
+        轉成 [1, 2, 3]
+        """
+        return [m.id for m in modules]
 
 
 class OrgListItemDTO(BaseModel):

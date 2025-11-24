@@ -40,7 +40,7 @@ def build_si_map(roles, perms_by_type):
                     "role": r.role_name,
                     "logo": r.org_logo,
                     "isActive": not r.org_disabled,
-                    "isExpire": (
+                    "isContractLive": (
                         is_contract_isExpired(r.org_contract_start, r.org_contract_end)
                     ),
                     "permissions": [r.perm_name],
