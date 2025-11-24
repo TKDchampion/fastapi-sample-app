@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
@@ -13,6 +14,8 @@ class OrgDetailDTO(DateOnlySerializerMixin, BaseModel):
     disabled: bool
     contract_start: DateLikeDatetime
     contract_end: DateLikeDatetime
+    created_at: datetime
+    updated_at: datetime
     business_modules: list[BusinessModuleDTO] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -33,6 +36,8 @@ class OrgListItemDTO(DateOnlySerializerMixin, BaseModel):
     disabled: bool
     contract_start: DateLikeDatetime
     contract_end: DateLikeDatetime
+    created_at: datetime
+    updated_at: datetime
 
 
 class OrgListResponseDTO(BaseModel):
@@ -46,6 +51,8 @@ class OrgUpsertParamDTO(DateOnlySerializerMixin, BaseModel):
     contract_start: DateLikeDatetime
     contract_end: DateLikeDatetime
     business_modules: list[int]
+    created_at: datetime
+    updated_at: datetime
 
 
 class OrgUpsertRequestDTO(BaseModel):
