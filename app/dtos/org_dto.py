@@ -51,8 +51,6 @@ class OrgUpsertParamDTO(DateOnlySerializerMixin, BaseModel):
     contract_start: DateLikeDatetime
     contract_end: DateLikeDatetime
     business_modules: list[int]
-    created_at: datetime
-    updated_at: datetime
 
 
 class OrgUpsertRequestDTO(BaseModel):
