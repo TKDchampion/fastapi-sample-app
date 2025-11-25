@@ -51,16 +51,9 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserReadDTO):
     try:
         params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
-        verify_org_write_permission(db, user_info, params)
-        detail = org_repository.get_org_by_sid_oid(db, si_id, org_id)
+        res = verify_org_write_permission(db, user_info, params)
 
-        if detail is None:
-            raise HTTPException(
-                status_code=500,
-                detail={"type": "not_found", "msg": "Not found"},
-            )
-
-        return OrgDetailDTO.model_validate(detail)
+        return OrgDetailDTO.model_validate(res["org_detail"])
     except HTTPException:
         raise
 

@@ -12,7 +12,7 @@ from app.services.jwt_service import token_required
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(prefix="/business_module", tags=["business_module"])
+router = APIRouter(prefix="/business_module", tags=["Business_module"])
 
 
 @router.get("/list", response_model=List[BusinessModuleDTO])

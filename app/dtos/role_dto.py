@@ -1,4 +1,8 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
+from typing import TYPE_CHECKING
+from pydantic import BaseModel, EmailStr
+
+if TYPE_CHECKING:
+    from app.dtos.user_dto import UserReadDTO
 
 
 class RoleDTO(BaseModel):
@@ -10,3 +14,9 @@ class RoleDTO(BaseModel):
 class UserRoleCreateDTO(BaseModel):
     email: EmailStr
     role_id: int
+
+
+class AssignRoleParamDTO(UserRoleCreateDTO):
+    si_id: int
+    org_id: int
+    user_info: "UserReadDTO"

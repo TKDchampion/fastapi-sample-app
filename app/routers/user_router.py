@@ -43,12 +43,6 @@ def get_user_access_tree(
     """
     Get current user access tree
     """
-    # user_info = UserReadDTO(
-    #     id=1,
-    #     name="giant",
-    #     email="giant@kdanmobile.com",
-    #     picture="string",
-    # )
     try:
         return user_service.get_user_access_tree(db, user_info)
     except HTTPException:
