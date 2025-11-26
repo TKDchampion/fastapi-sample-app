@@ -1,5 +1,6 @@
 from collections import defaultdict
 from sqlalchemy.orm import Session
+from app.decorators.db_transaction import db_tx
 from app.domain.access_tree.build_si_map import build_si_map
 from app.domain.access_tree.build_super_tree import build_super_tree
 from app.domain.access_tree.fill_si_full_access import fill_si_full_access
@@ -11,18 +12,22 @@ from app.dtos.user_dto import (
 )
 
 
+@db_tx
 def get_users(db: Session):
     return user_repository.get_all_users(db)
 
 
+@db_tx
 def add_user(db: Session, user: UserCreateDTO):
     return user_repository.create_user(db, user)
 
 
+@db_tx
 def get_user_by_email(db: Session, email: str):
     return user_repository.get_user_by_email(db, email)
 
 
+@db_tx
 def get_user_access_tree(db: Session, user: UserReadDTO):
     roles = user_repository.get_user_roles_si_org_perm(db, user.id)
     perms = permission_repository.get_permissions(db)

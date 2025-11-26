@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.decorators.db_transaction import db_tx
 from app.repositories import si_repository, user_repository
 from app.dtos.si_dto import (
     SIListItemDTO,
@@ -6,6 +7,7 @@ from app.dtos.si_dto import (
 )
 
 
+@db_tx
 def get_user_si(db: Session, user_id: int):
     roles = user_repository.get_user_roles(db, user_id)
     has_super = any(r.scope_type == "super" for r in roles)

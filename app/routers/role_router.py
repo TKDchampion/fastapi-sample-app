@@ -1,5 +1,4 @@
-import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.params import Depends
 from app.database import get_db
 from app.decorators import router_try
@@ -10,7 +9,6 @@ from app.services.jwt_service import token_required
 from sqlalchemy.orm import Session
 
 
-logger = logging.getLogger(__name__)
 role_router = APIRouter(prefix="/role", tags=["Role"])
 si_router = APIRouter(prefix="/si", tags=["Role"])
 org_router = APIRouter(prefix="/org", tags=["Role"])

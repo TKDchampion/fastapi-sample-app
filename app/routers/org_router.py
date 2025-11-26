@@ -1,7 +1,6 @@
 from datetime import datetime, time, timezone
-import logging
 from typing import Optional
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.decorators import router_try
@@ -20,9 +19,6 @@ from app.dtos.user_dto import (
 )
 from app.services.gcs_uploader import upload_logo_to_gcs
 from app.services.jwt_service import token_required
-
-
-logger = logging.getLogger(__name__)
 
 
 org_router = APIRouter(prefix="/org", tags=["Org"])
