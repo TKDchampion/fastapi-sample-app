@@ -2,7 +2,7 @@ import logging
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-from app.domain.access_tree.check_user_access import OrgWriteParams
+from app.domain.access_tree.check_user_access import OrgWriteParamsDTO
 from app.dtos.business_module_dto import BusinessModuleDTO
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
@@ -50,7 +50,7 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserReadDTO):
     try:
-        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
+        params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.edit")
         res = verify_org_write_permission(db, user_info, params)
 
         return OrgDetailDTO.model_validate(res["org_detail"])
@@ -63,11 +63,11 @@ def upsert_organization_with_roles(
 ) -> OrgUpsertResponseDTO:
     try:
         if dto.org_id:
-            params = OrgWriteParams(si_id=si_id, org_id=dto.org_id, perm="org.edit")
+            params = OrgWriteParamsDTO(si_id=si_id, org_id=dto.org_id, perm="org.edit")
             verify_org_write_permission(db, user_info, params)
             org = org_repository.upsert_org(db, dto, si_id, dto.org_id)
         else:
-            params = OrgWriteParams(si_id=si_id, perm="org.create")
+            params = OrgWriteParamsDTO(si_id=si_id, perm="org.create")
             verify_org_write_permission(db, user_info, params)
             org = org_repository.upsert_org(db, dto, si_id)
             role_repository.create_roles(db, org)
@@ -115,7 +115,7 @@ def update_organization_disabled(
     db: Session, user_info: UserReadDTO, si_id: int, org_id: int, disabled: bool
 ):
     try:
-        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="org.edit")
+        params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.edit")
         verify_org_write_permission(db, user_info, params)
         org = org_repository.update_org_disabled(db, org_id, disabled)
 
@@ -123,8 +123,8 @@ def update_organization_disabled(
             raise HTTPException(
                 status_code=403,
                 detail={
-                    "type": "error",
-                    "msg": f"No org access",
+                    "type": "no_access",
+                    "msg": "No org access",
                 },
             )
 
@@ -156,7 +156,7 @@ def get_users_by_si_and_org(
     db: Session, si_id: int, org_id: int, user_info: UserReadDTO
 ):
     try:
-        params = OrgWriteParams(si_id=si_id, org_id=org_id, perm="member.view")
+        params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="member.view")
         verify_org_write_permission(db, user_info, params)
         si_org_ids = org_repository.get_orgs_by_sid(db, si_id)
         org_ids = [org.id for org in si_org_ids]

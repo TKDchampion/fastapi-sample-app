@@ -2,13 +2,13 @@ from dataclasses import dataclass
 
 
 @dataclass
-class OrgWriteParams:
+class OrgWriteParamsDTO:
     si_id: int
     org_id: int | None = None
     perm: str = ""
 
 
-def can_write_org(access_tree: dict, params: OrgWriteParams) -> bool:
+def can_write_org(access_tree: dict, params: OrgWriteParamsDTO) -> bool:
     si_id = params.si_id
     org_id = params.org_id
     perm = params.perm

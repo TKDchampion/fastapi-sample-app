@@ -49,6 +49,7 @@ def get_user_access_tree(
         # 已是 HTTPException，直接拋出
         raise
     except Exception as e:
+        print(e)
         logger.error("Exception message : %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,

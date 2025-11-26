@@ -2,7 +2,7 @@
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.domain.access_tree.check_user_access import OrgWriteParams, can_write_org
+from app.domain.access_tree.check_user_access import OrgWriteParamsDTO, can_write_org
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import org_repository
 from app.services.user_service import get_user_access_tree
@@ -11,12 +11,13 @@ from app.services.user_service import get_user_access_tree
 def verify_org_write_permission(
     db: Session,
     user: UserReadDTO,
-    params: OrgWriteParams,
+    params: OrgWriteParamsDTO,
 ):
     """
     驗證使用者是否有權限。
     """
     if params.si_id and params.org_id:
+        print(params)
         org_detail = org_repository.get_org_by_sid_oid(db, params.si_id, params.org_id)
         if org_detail is None:
             raise HTTPException(
@@ -27,6 +28,9 @@ def verify_org_write_permission(
     access_tree = get_user_access_tree(db, user)
 
     if not can_write_org(access_tree, params):
-        raise HTTPException(status_code=403, detail="Insufficient permission")
+        raise HTTPException(
+            status_code=403,
+            detail={"type": "no_access", "msg": "Insufficient permission"},
+        )
 
     return {"isAccess": True, "org_detail": org_detail or None}

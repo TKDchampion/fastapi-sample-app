@@ -1,11 +1,12 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
+from pydantic import EmailStr
 from requests import Session
 from app.database import get_db
 from app.dtos.role_dto import AssignRoleParamDTO, RoleDTO, UserRoleCreateDTO
-from app.dtos.user_dto import UserReadDTO
-from app.services import role_service
+from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
+from app.services import org_service, role_service
 from app.services.jwt_service import token_required
 
 
@@ -15,7 +16,29 @@ si_router = APIRouter(prefix="/si", tags=["Role"])
 org_router = APIRouter(prefix="/org", tags=["Role"])
 
 
-@si_router.post("/{si_id}/{org_id}/create_user")
+@si_router.get("/{si_id}/org/{org_id}/users", response_model=list[UserRolesResponseDTO])
+def get_users_by_si_and_org(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    """Get organization users"""
+
+    try:
+        return org_service.get_users_by_si_and_org(db, si_id, org_id, user_info)
+    except HTTPException:
+        # 已是 HTTPException，直接拋出
+        raise
+    except Exception as e:
+        logger.error("Exception message : %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"type": "error", "msg": "Get organization users error"},
+        )
+
+
+@si_router.post("/{si_id}/org/{org_id}/create_user")
 def create_user_role(
     user_role: UserRoleCreateDTO,
     si_id: int,
@@ -64,3 +87,15 @@ def get_roles_by_org(
             status_code=500,
             detail={"type": "error", "msg": "Unknown error"},
         )
+
+
+@si_router.put("/{si_id}/org/{org_id}/user/{user_id}/role")
+def update_user_email(
+    si_id: int,
+    org_id: int,
+    user_id: int,
+    role_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    return role_service.update_user_role(db, si_id, org_id, user_id, role_id, user_info)

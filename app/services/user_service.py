@@ -36,7 +36,7 @@ def get_user_access_tree(db: Session, user: UserReadDTO):
     result = {
         "level": "super",
         "isActive": has_super,
-        "permissions": perms_by_type["super"] if has_super else [],
+        "permissions": [p for p in perms_by_type["super"] if p] if has_super else [],
         "accessibleNode": [],
     }
 

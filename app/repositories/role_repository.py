@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.orm import Session
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.role_entity import RoleEntity
@@ -58,3 +58,28 @@ def roles_by_org(db: Session, org_id: int) -> bool:
         RoleEntity.organization_id == org_id
     )
     return db.execute(stmt).mappings().all()
+
+
+def update_user_role(db: Session, user_id: int, org_id: int, role_id: int):
+    stmt = (
+        update(user_roles_table)
+        .where(
+            user_roles_table.c.user_id == user_id,
+            user_roles_table.c.scope_type == "org",
+            user_roles_table.c.scope_id == org_id,
+        )
+        .values(role_id=role_id)
+        .returning(user_roles_table)
+    )
+
+    result = db.execute(stmt)
+    return result.fetchone()
+
+
+def get_user_role(db: Session, user_id: int, org_id: int):
+    stmt = select(user_roles_table).where(
+        user_roles_table.c.user_id == user_id,
+        user_roles_table.c.scope_type == "org",
+        user_roles_table.c.scope_id == org_id,
+    )
+    return db.execute(stmt).fetchone()

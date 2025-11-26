@@ -175,28 +175,6 @@ def upsert_organization(
         )
 
 
-@si_router.get("/{si_id}/org/{org_id}/users", response_model=list[UserRolesResponseDTO])
-def get_users_by_si_and_org(
-    si_id: int,
-    org_id: int,
-    db: Session = Depends(get_db),
-    user_info: UserReadDTO = Depends(token_required),
-):
-    """Get organization users"""
-
-    try:
-        return org_service.get_users_by_si_and_org(db, si_id, org_id, user_info)
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Get organization users error"},
-        )
-
-
 @si_router.get("/{si_id}/org/{org_id}/detail", response_model=OrgDetailDTO)
 def get_org_by_sid_oid(
     si_id: int,

@@ -14,7 +14,7 @@ def build_si_map(roles, perms_by_type):
                 "logo": r.si_logo,
                 "isActive": True,
                 "role": r.role_name,
-                "permissions": perms_by_type["si"],
+                "permissions": [p for p in perms_by_type["si"] if p],
                 "accessibleNode": [],
             }
 
@@ -43,7 +43,7 @@ def build_si_map(roles, perms_by_type):
                     "isContractLive": (
                         is_contract_isExpired(r.org_contract_start, r.org_contract_end)
                     ),
-                    "permissions": [r.perm_name],
+                    "permissions": [r.perm_name] if r.perm_name else [],
                 }
             )
 
