@@ -90,7 +90,7 @@ def get_roles_by_org(
 
 
 @si_router.put("/{si_id}/org/{org_id}/user/{user_id}/role")
-def update_user_email(
+def update_user_role(
     si_id: int,
     org_id: int,
     user_id: int,

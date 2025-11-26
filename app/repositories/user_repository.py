@@ -28,7 +28,7 @@ def get_user_by_email(db: Session, email: str):
     return db.query(UserEntity).filter(UserEntity.email == email).first()
 
 
-def get_user(db: Session, user_id: int):
+def get_user_by_id(db: Session, user_id: int):
     return db.scalar(select(UserEntity).where(UserEntity.id == user_id))
 
 
