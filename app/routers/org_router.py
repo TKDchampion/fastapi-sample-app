@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.decorators import router_try
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.org_dto import (
     LogoUploadResponseDTO,
@@ -16,7 +17,6 @@ from app.dtos.org_dto import (
 from app.services import org_service
 from app.dtos.user_dto import (
     UserReadDTO,
-    UserRolesResponseDTO,
 )
 from app.services.gcs_uploader import upload_logo_to_gcs
 from app.services.jwt_service import token_required
@@ -30,6 +30,7 @@ si_router = APIRouter(prefix="/si", tags=["Org"])
 
 
 @si_router.get("/{si_id}/org/list", response_model=OrgListResponseDTO)
+@router_try()
 def get_organizations_by_si_id(
     si_id: int,
     db: Session = Depends(get_db),
@@ -38,47 +39,28 @@ def get_organizations_by_si_id(
     """
     Get organizations by SI ID
     """
-    try:
-        return org_service.get_organizations_by_si_id(db, si_id, user_info.id)
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Unknown error"},
-        )
+    return org_service.get_organizations_by_si_id(db, si_id, user_info.id)
 
 
 @org_router.post(
     "/upload_logo",
     response_model=LogoUploadResponseDTO,
 )
+@router_try()
 def upload_organization_logo(
     logo: UploadFile = File(...),
     user_info: UserReadDTO = Depends(token_required),
 ):
     """Upload organization logo to GCS"""
-    try:
-        logo_url = upload_logo_to_gcs(logo) if logo else None
-        return {"url": logo_url}
-
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Upload organization logo error"},
-        )
+    logo_url = upload_logo_to_gcs(logo) if logo else None
+    return {"url": logo_url}
 
 
 @si_router.post(
     "/{si_id}/org/create",
     response_model=OrgUpsertResponseDTO,
 )
+@router_try()
 def create_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
@@ -94,25 +76,14 @@ def create_organization(
     org_body.contract_start = start_dt
     org_body.contract_end = end_dt
 
-    try:
-        return org_service.upsert_organization_with_roles(
-            db, org_body, si_id, user_info
-        )
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Create organization error"},
-        )
+    return org_service.upsert_organization_with_roles(db, org_body, si_id, user_info)
 
 
 @si_router.put(
     "/{si_id}/org/{org_id}/update",
     response_model=OrgUpsertResponseDTO,
 )
+@router_try()
 def update_organization(
     si_id: int,
     org: OrgUpsertRequestDTO,
@@ -132,25 +103,14 @@ def update_organization(
     if org_id:
         org_body.org_id = org_id
 
-    try:
-        return org_service.upsert_organization_with_roles(
-            db, org_body, si_id, user_info
-        )
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Create organization error"},
-        )
+    return org_service.upsert_organization_with_roles(db, org_body, si_id, user_info)
 
 
 @si_router.put(
     "/{si_id}/org/{org_id}/disabled",
     response_model=TextResponseDTO,
 )
+@router_try()
 def upsert_organization(
     si_id: int,
     org_id: int,
@@ -160,22 +120,13 @@ def upsert_organization(
 ) -> TextResponseDTO:
     """Update organization and upload logo to GCS"""
 
-    try:
-        return org_service.update_organization_disabled(
-            db, user_info, si_id, org_id, disabled
-        )
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Update organization error"},
-        )
+    return org_service.update_organization_disabled(
+        db, user_info, si_id, org_id, disabled
+    )
 
 
 @si_router.get("/{si_id}/org/{org_id}/detail", response_model=OrgDetailDTO)
+@router_try()
 def get_org_by_sid_oid(
     si_id: int,
     org_id: int,
@@ -184,14 +135,4 @@ def get_org_by_sid_oid(
 ):
     """Get organization detail"""
 
-    try:
-        return org_service.get_org_by_sid_oid(db, si_id, org_id, user_info)
-    except HTTPException:
-        # 已是 HTTPException，直接拋出
-        raise
-    except Exception as e:
-        logger.error("Exception message : %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={"type": "error", "msg": "Get organization detail error"},
-        )
+    return org_service.get_org_by_sid_oid(db, si_id, org_id, user_info)

@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select, update
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.role_entity import RoleEntity
@@ -83,3 +83,20 @@ def get_user_role(db: Session, user_id: int, org_id: int):
         user_roles_table.c.scope_id == org_id,
     )
     return db.execute(stmt).fetchone()
+
+
+def delete_user_role(db: Session, user_id: int, org_id: int):
+    stmt = (
+        delete(user_roles_table)
+        .where(
+            user_roles_table.c.user_id == user_id,
+            user_roles_table.c.scope_type == "org",
+            user_roles_table.c.scope_id == org_id,
+        )
+        .returning(user_roles_table.c.user_id)
+    )
+
+    result = db.execute(stmt)
+    row = result.fetchone()
+
+    return row[0] if row else None
