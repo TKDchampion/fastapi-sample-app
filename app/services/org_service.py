@@ -75,11 +75,22 @@ def upsert_organization_with_roles(
             db, org.id, dto.business_modules
         )
 
+        org_dict = {
+            "id": org.id,
+            "name": org.name,
+            "logo": org.logo,
+            "disabled": org.disabled,
+            "contract_start": org.contract_start,
+            "contract_end": org.contract_end,
+            "created_at": org.created_at,
+            "updated_at": org.updated_at,
+            "business_modules": business_modules,
+        }
+        res = OrgUpsertResponseDTO.model_validate(org_dict)
+
         db.commit()
         db.refresh(org)
-        return OrgUpsertResponseDTO.model_validate(
-            {**org.__dict__, "business_modules": business_modules}
-        )
+        return res
 
     except HTTPException:
         db.rollback()

@@ -5,7 +5,6 @@ from requests import Session
 from app.database import get_db
 from app.dtos.role_dto import AssignRoleParamDTO, UserRoleCreateDTO
 from app.dtos.user_dto import UserReadDTO
-from app.repositories import role_repository, user_repository
 from app.services import role_service
 from app.services.jwt_service import token_required
 
@@ -29,9 +28,8 @@ def create_user_role(
             role_id=user_role.role_id,
             si_id=si_id,
             org_id=org_id,
-            user_info=user_info,
         )
-        return role_service.assign_role_to_user(db, param)
+        return role_service.assign_role_to_user(db, param, user_info)
     except HTTPException:
         # 已是 HTTPException，直接拋出
         raise

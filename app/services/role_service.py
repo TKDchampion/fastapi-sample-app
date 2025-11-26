@@ -2,17 +2,18 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import OrgWriteParams
 from app.dtos.role_dto import AssignRoleParamDTO
+from app.dtos.user_dto import UserReadDTO
 from app.repositories import role_repository
 from app.services import user_service
 from app.services.permission_guard_service import verify_org_write_permission
 
 
-def assign_role_to_user(db: Session, param: AssignRoleParamDTO):
+def assign_role_to_user(db: Session, param: AssignRoleParamDTO, user_info: UserReadDTO):
     try:
         params = OrgWriteParams(
             si_id=param.si_id, org_id=param.org_id, perm="member.edit"
         )
-        verify_org_write_permission(db, param.user_info, params)
+        verify_org_write_permission(db, user_info, params)
 
         # 1. Validate user
         user = user_service.get_user_by_email(db, param.email)
@@ -23,7 +24,7 @@ def assign_role_to_user(db: Session, param: AssignRoleParamDTO):
             )
 
         # 2. Validate role belongs to org
-        role = role_repository.get_role_in_org(db, param.role_id, param.org_id)
+        role = role_repository.role_belongs_to_org(db, param.role_id, param.org_id)
         if not role:
             raise HTTPException(
                 status_code=404,
@@ -35,23 +36,24 @@ def assign_role_to_user(db: Session, param: AssignRoleParamDTO):
             db, param.org_id, param.role_id, user.id
         )
 
-        # 4. Commit
-        db.commit()
-
-        return {
+        result = {
             "msg": "Role assigned",
             "user_id": user.id,
             "role_id": param.role_id,
             "org_id": param.org_id,
-            "data": dict(new_user_role),
+            "data": new_user_role._mapping,
         }
+
+        # 4. Commit
+        db.commit()
+        return result
 
     except HTTPException:
         db.rollback()
         raise
-
     except Exception as e:
         db.rollback()
+        print("🔥 EXCEPTION:", e)
         raise HTTPException(
             500,
             detail={"type": "error", "msg": "create user role error"},
