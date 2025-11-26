@@ -1,7 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
-
-from app.dtos.role_dto import RoleDTO
+from pydantic import BaseModel, Field
 
 
 class UserCreateDTO(BaseModel):

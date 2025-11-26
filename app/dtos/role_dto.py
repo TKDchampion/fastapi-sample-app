@@ -5,7 +5,6 @@ from pydantic import BaseModel, EmailStr
 class RoleDTO(BaseModel):
     id: int
     name: str
-    description: str | None = None
 
 
 class UserRoleCreateDTO(BaseModel):

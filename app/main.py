@@ -69,8 +69,9 @@ Routers = [
     org_router.org_router,
     org_router.si_router,
     business_module_router.router,
-    role_router.role_router,
     role_router.si_router,
+    role_router.org_router,
+    role_router.role_router,
 ]
 
 for r in Routers:

@@ -51,10 +51,10 @@ def assign_role_to_user(db: Session, param: AssignRoleParamDTO, user_info: UserR
     except HTTPException:
         db.rollback()
         raise
-    except Exception as e:
-        db.rollback()
-        print("🔥 EXCEPTION:", e)
-        raise HTTPException(
-            500,
-            detail={"type": "error", "msg": "create user role error"},
-        )
+
+
+def roles_by_org(db: Session, org_id: int):
+    try:
+        return role_repository.roles_by_org(db, org_id)
+    except HTTPException:
+        raise

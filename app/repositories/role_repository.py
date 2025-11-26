@@ -51,3 +51,10 @@ def create_user_role(db: Session, org_id: int, role_id: int, user_id: int):
 
     result = db.execute(stmt)
     return result.fetchone()
+
+
+def roles_by_org(db: Session, org_id: int) -> bool:
+    stmt = select(RoleEntity.id, RoleEntity.name).where(
+        RoleEntity.organization_id == org_id
+    )
+    return db.execute(stmt).mappings().all()
