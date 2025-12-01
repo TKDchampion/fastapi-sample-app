@@ -53,3 +53,4 @@ class UserRolesResponseDTO(BaseModel):
     email: str
     picture: str | None = None
     role_name: str
+    role_id: Optional[int] = None
