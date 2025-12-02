@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from app.database import get_db
 from app.decorators import router_try
-from app.dtos.permission_dto import OrgPermissionDTO
+from app.dtos.permission_dto import OrgPermissionDTO, RolePermissionUpdateDTO
 from app.dtos.role_dto import (
     RolePermissionDTO,
 )
@@ -42,3 +42,21 @@ def list_org_permissions(
     user_info: UserReadDTO = Depends(token_required),
 ):
     return permission_service.get_all_permissions_org(db)
+
+
+@si_router.put("/{si_id}/org/{org_id}/role_permissions")
+@router_try()
+def update_role_permissions(
+    si_id: int,
+    org_id: int,
+    role_permissions: List[RolePermissionUpdateDTO],
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    return permission_service.update_role_permissions(
+        db=db,
+        si_id=si_id,
+        org_id=org_id,
+        role_permissions=role_permissions,
+        user_info=user_info,
+    )

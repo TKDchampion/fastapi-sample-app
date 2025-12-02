@@ -14,3 +14,8 @@ class OrgPermissionDTO(BaseModel):
     id: int
     key: str
     name: str
+
+
+class RolePermissionUpdateDTO(BaseModel):
+    id: int
+    permissions: List[int]
