@@ -116,16 +116,6 @@ def update_organization_disabled(
     )
 
 
-def translate_role_name(name: str) -> str:
-    mapping = {
-        "owner": "擁有者",
-        "admin": "管理員",
-        "manager": "經理",
-        "member": "成員",
-    }
-    return mapping.get(name, name)
-
-
 @db_tx
 def get_users_by_si_and_org(
     db: Session, si_id: int, org_id: int, user_info: UserReadDTO
@@ -170,7 +160,7 @@ def get_users_by_si_and_org(
             "name": user.name,
             "email": user.email,
             "picture": user.picture,
-            "role_name": translate_role_name(role_name),
+            "role_name": role_name,
             "role_id": user.role_id,
         }
 
