@@ -92,6 +92,7 @@ def get_user_roles_si_org_perm(db: Session, user_id: int):
             SI_scope.logo.label("si_logo"),
             RoleEntity.name.label("role_name"),
             PermissionEntity.name.label("perm_name"),
+            PermissionEntity.key.label("perm_key"),
             PermissionEntity.type.label("perm_type"),
         )
         .outerjoin(RoleEntity, RoleEntity.id == user_roles_table.c.role_id)

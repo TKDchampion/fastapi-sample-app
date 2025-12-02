@@ -33,8 +33,8 @@ def get_user_access_tree(db: Session, user: UserReadDTO):
     perms = permission_repository.get_permissions(db)
 
     perms_by_type = defaultdict(list)
-    for name, ptype in perms:
-        perms_by_type[ptype].append(name)
+    for key, ptype in perms:
+        perms_by_type[ptype].append(key)
 
     has_super = any(r.scope_type == "super" for r in roles)
 

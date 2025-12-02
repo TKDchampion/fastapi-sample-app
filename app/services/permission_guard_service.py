@@ -20,7 +20,6 @@ def verify_org_write_permission(
     驗證使用者是否有權限。
     """
     if params.si_id and params.org_id:
-        print(params)
         org_detail = org_repository.get_org_by_sid_oid(db, params.si_id, params.org_id)
         if org_detail is None:
             raise HTTPException(

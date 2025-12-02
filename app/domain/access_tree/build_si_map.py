@@ -43,7 +43,7 @@ def build_si_map(roles, perms_by_type):
                     "isContractLive": (
                         is_contract_isExpired(r.org_contract_start, r.org_contract_end)
                     ),
-                    "permissions": [r.perm_name] if r.perm_name else [],
+                    "permissions": [r.perm_key] if r.perm_key else [],
                 }
             )
 
