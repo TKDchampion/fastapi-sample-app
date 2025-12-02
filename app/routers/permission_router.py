@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 from app.database import get_db
 from app.decorators import router_try
+from app.dtos.permission_dto import OrgPermissionDTO
 from app.dtos.role_dto import (
     RolePermissionDTO,
 )
@@ -32,3 +33,12 @@ def delete_user_role(
         org_id=org_id,
         user_info=user_info,
     )
+
+
+@perm_router.get("/org", response_model=List[OrgPermissionDTO])
+@router_try()
+def list_org_permissions(
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    return permission_service.get_all_permissions_org(db)

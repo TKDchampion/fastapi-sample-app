@@ -29,3 +29,9 @@ def get_role_permissions(
         )
 
     return response
+
+
+@db_tx
+def get_all_permissions_org(db: Session):
+    permissions = permission_repository.get_all_permissions_org(db)
+    return permissions

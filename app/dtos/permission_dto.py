@@ -8,3 +8,9 @@ class RolePermissionDTO(BaseModel):
     permissions: List[int]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OrgPermissionDTO(BaseModel):
+    id: int
+    key: str
+    name: str
