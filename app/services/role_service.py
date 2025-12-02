@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.decorators.db_transaction import db_tx
+from app.domain.access_tree.check_user_access import OrgWriteParamsDTO
 from app.domain.check_exist import (
     ensure_org_write_permission,
     ensure_role_belongs_to_org,
@@ -8,10 +9,11 @@ from app.domain.check_exist import (
     ensure_user_role_exists,
 )
 from app.domain.exception.domain_exception import DomainException
-from app.dtos.role_dto import AssignRoleParamDTO
+from app.dtos.role_dto import AssignRoleParamDTO, RolePermissionDTO
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import role_repository
 from app.services import user_service
+from app.services.permission_guard_service import verify_org_write_permission
 
 
 @db_tx

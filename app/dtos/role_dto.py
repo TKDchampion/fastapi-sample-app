@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
-from pydantic import BaseModel, EmailStr
+from typing import List
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class RoleDTO(BaseModel):
@@ -15,3 +15,11 @@ class UserRoleCreateDTO(BaseModel):
 class AssignRoleParamDTO(UserRoleCreateDTO):
     si_id: int
     org_id: int
+
+
+class RolePermissionDTO(BaseModel):
+    id: int
+    name: str
+    permissions: List[int]
+
+    model_config = ConfigDict(from_attributes=True)

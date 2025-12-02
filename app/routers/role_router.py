@@ -1,8 +1,14 @@
+from typing import List
 from fastapi import APIRouter
 from fastapi.params import Depends
 from app.database import get_db
 from app.decorators import router_try
-from app.dtos.role_dto import AssignRoleParamDTO, RoleDTO, UserRoleCreateDTO
+from app.dtos.role_dto import (
+    AssignRoleParamDTO,
+    RoleDTO,
+    RolePermissionDTO,
+    UserRoleCreateDTO,
+)
 from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
 from app.services import org_service, role_service
 from app.services.jwt_service import token_required
