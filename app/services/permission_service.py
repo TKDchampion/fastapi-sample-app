@@ -86,4 +86,17 @@ def update_role_permissions(
         permission_repository.delete_role_permissions(db, rp.id)
         permission_repository.add_role_permissions(db, rp.id, rp.permissions)
 
-    return {"message": "Role permissions updated successfully"}
+    # 6. Return updated data (within same transaction)
+    roles = permission_repository.get_roles_with_permissions(db, org_id)
+
+    response = []
+    for role in roles:
+        response.append(
+            RolePermissionDTO(
+                id=role.id,
+                name=role.name,
+                permissions=[perm.id for perm in role.permissions],
+            )
+        )
+
+    return response

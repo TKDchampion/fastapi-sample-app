@@ -21,7 +21,7 @@ si_router = APIRouter(prefix="/si", tags=["Permission"])
     "/{si_id}/org/{org_id}/role_permissions", response_model=List[RolePermissionDTO]
 )
 @router_try()
-def delete_user_role(
+def get_role_permissions(
     si_id: int,
     org_id: int,
     db: Session = Depends(get_db),
@@ -44,7 +44,9 @@ def list_org_permissions(
     return permission_service.get_all_permissions_org(db)
 
 
-@si_router.put("/{si_id}/org/{org_id}/role_permissions")
+@si_router.put(
+    "/{si_id}/org/{org_id}/role_permissions", response_model=List[RolePermissionDTO]
+)
 @router_try()
 def update_role_permissions(
     si_id: int,
