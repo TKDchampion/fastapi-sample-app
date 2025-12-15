@@ -52,7 +52,7 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 @db_tx
 def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserReadDTO):
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.edit")
+    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="pass")
     res = verify_org_write_permission(db, user_info, params)
 
     return OrgDetailDTO.model_validate(res["org_detail"])

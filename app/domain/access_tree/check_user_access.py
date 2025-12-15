@@ -30,7 +30,7 @@ def can_write_org(access_tree: dict, params: OrgWriteParamsDTO) -> bool:
                 si_node["id"] == si_id
                 and si_node["isActive"]
                 and any(
-                    org_node["id"] == org_id
+                    org_node["id"] == org_id and org_node.get("isContractLive", True)
                     for org_node in si_node.get("accessibleNode", [])
                 )
             ):
@@ -41,7 +41,14 @@ def can_write_org(access_tree: dict, params: OrgWriteParamsDTO) -> bool:
 
         # 修改 Org：檢查 Org 層級權限
         for org_node in si_node.get("accessibleNode", []):
-            if org_node["id"] == org_id and org_node["isActive"]:
+            if (
+                org_node["id"] == org_id
+                and org_node["isActive"]
+                and org_node.get("isContractLive", True)
+            ):
+                # 如果 perm 是 "pass"，繞過權限檢查，只驗證基本條件
+                if perm == "pass":
+                    return True
                 return perm in org_node.get("permissions", [])
 
     return False
