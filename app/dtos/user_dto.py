@@ -28,7 +28,7 @@ class OrgNodeDTO(BaseModel):
 class SINodeDTO(BaseModel):
     level: str = Field(default="si")
     id: int
-    name: str
+    name: str | None = None
     isActive: bool
     logo: str | None = None
     permissions: List[str]

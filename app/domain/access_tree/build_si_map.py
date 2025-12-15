@@ -24,10 +24,10 @@ def build_si_map(roles, perms_by_type):
                 si_map[r.si_id] = {
                     "level": "si",
                     "id": r.si_id,
-                    "name": r.si_name,
+                    "name": None,
                     "isActive": False,
                     "role": None,
-                    "logo": r.si_logo,
+                    "logo": None,
                     "permissions": [],
                     "accessibleNode": [],
                 }
