@@ -1,5 +1,5 @@
 from sqlalchemy import delete, insert, select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.role_entity import RoleEntity
 from app.entities.associations_entity import (
@@ -104,8 +104,9 @@ def delete_user_role(db: Session, user_id: int, org_id: int):
 
 def get_role_with_permissions(db: Session, role_id: int):
     """Get role with its permissions eagerly loaded"""
-    role = db.query(RoleEntity).filter(RoleEntity.id == role_id).first()
-    if role:
-        # Access permissions to trigger lazy loading
-        _ = role.permissions
-    return role
+    return (
+        db.query(RoleEntity)
+        .options(selectinload(RoleEntity.permissions))
+        .filter(RoleEntity.id == role_id)
+        .first()
+    )
