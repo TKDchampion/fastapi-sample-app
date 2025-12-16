@@ -9,7 +9,11 @@ from app.domain.check_exist import (
     ensure_user_role_exists,
 )
 from app.domain.exception.domain_exception import DomainException
-from app.dtos.role_dto import AssignRoleParamDTO, RolePermissionDTO
+from app.dtos.role_dto import (
+    AssignRoleParamDTO,
+    RolePermissionDTO,
+    UpdateUserRoleResponseDTO,
+)
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import role_repository
 from app.services import user_service
@@ -63,20 +67,20 @@ def update_user_role(
     ensure_role_belongs_to_org(db, role_id, org_id)
     ensure_user_role_exists(db, user_id, org_id)
 
-    updated = role_repository.update_user_role(
+    role_repository.update_user_role(
         db=db,
         user_id=user_id,
         org_id=org_id,
         role_id=role_id,
     )
 
-    return {
-        "msg": "Role updated",
-        "user_id": user_id,
-        "org_id": org_id,
-        "role_id": role_id,
-        "data": updated._mapping,
-    }
+    # Get updated role with permissions
+    role = role_repository.get_role_with_permissions(db, role_id)
+
+    return UpdateUserRoleResponseDTO(
+        role_name=role.name,
+        permissions=[perm.key for perm in role.permissions],
+    )
 
 
 @db_tx

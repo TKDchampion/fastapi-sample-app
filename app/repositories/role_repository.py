@@ -1,5 +1,5 @@
 from sqlalchemy import delete, insert, select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.role_entity import RoleEntity
 from app.entities.associations_entity import (
@@ -100,3 +100,13 @@ def delete_user_role(db: Session, user_id: int, org_id: int):
     row = result.fetchone()
 
     return row[0] if row else None
+
+
+def get_role_with_permissions(db: Session, role_id: int):
+    """Get role with its permissions eagerly loaded"""
+    stmt = (
+        select(RoleEntity)
+        .where(RoleEntity.id == role_id)
+        .options(joinedload(RoleEntity.permissions))
+    )
+    return db.execute(stmt).scalar_one_or_none()

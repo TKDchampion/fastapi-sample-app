@@ -7,6 +7,7 @@ from app.dtos.role_dto import (
     AssignRoleParamDTO,
     RoleDTO,
     RolePermissionDTO,
+    UpdateUserRoleResponseDTO,
     UserRoleCreateDTO,
 )
 from app.dtos.user_dto import UserReadDTO, UserRolesResponseDTO
@@ -64,7 +65,10 @@ def get_roles_by_org(
     return role_service.roles_by_org(db, org_id)
 
 
-@si_router.put("/{si_id}/org/{org_id}/user/{user_id}/role")
+@si_router.put(
+    "/{si_id}/org/{org_id}/user/{user_id}/role",
+    response_model=UpdateUserRoleResponseDTO,
+)
 @router_try()
 def update_user_role(
     si_id: int,

@@ -23,3 +23,8 @@ class RolePermissionDTO(BaseModel):
     permissions: List[int]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UpdateUserRoleResponseDTO(BaseModel):
+    role_name: str
+    permissions: List[str]
