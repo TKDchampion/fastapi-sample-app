@@ -77,6 +77,9 @@ def update_user_role(
     # Get updated role with permissions
     role = role_repository.get_role_with_permissions(db, role_id)
 
+    if not role:
+        raise DomainException("Role not found", "role_not_found", 404)
+
     return UpdateUserRoleResponseDTO(
         role_name=role.name,
         permissions=[perm.key for perm in role.permissions],
