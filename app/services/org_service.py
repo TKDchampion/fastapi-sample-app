@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from app.decorators.db_transaction import db_tx
-from app.domain.access_tree.check_user_access import OrgWriteParamsDTO
+from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.domain.exception.domain_exception import DomainException
 from app.dtos.common_dto import TextResponseDTO
 from app.dtos.user_dto import UserReadDTO
@@ -20,7 +20,7 @@ from app.dtos.org_dto import (
     OrgListItemDTO,
     OrgListResponseDTO,
 )
-from app.services.permission_guard_service import verify_org_write_permission
+from app.services.permission_guard_service import verify_user_permission
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,8 @@ def get_organizations_by_si_id(db: Session, si_id: int, user_id: int):
 
 @db_tx
 def get_org_by_sid_oid(db: Session, si_id: int, org_id: int, user_info: UserReadDTO):
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="pass")
-    res = verify_org_write_permission(db, user_info, params)
+    params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass")
+    res = verify_user_permission(db, user_info, params)
 
     return OrgDetailDTO.model_validate(res["org_detail"])
 
@@ -63,12 +63,12 @@ def upsert_organization_with_roles(
     db: Session, dto: OrgUpsertParamDTO, si_id: int, user_info: UserReadDTO
 ) -> OrgUpsertResponseDTO:
     if dto.org_id:
-        params = OrgWriteParamsDTO(si_id=si_id, org_id=dto.org_id, perm="org.edit")
-        verify_org_write_permission(db, user_info, params)
+        params = PermissionCheckParams(si_id=si_id, org_id=dto.org_id, perm="org.edit")
+        verify_user_permission(db, user_info, params)
         org = org_repository.upsert_org(db, dto, si_id, dto.org_id)
     else:
-        params = OrgWriteParamsDTO(si_id=si_id, perm="org.create")
-        verify_org_write_permission(db, user_info, params)
+        params = PermissionCheckParams(si_id=si_id, perm="org.create")
+        verify_user_permission(db, user_info, params)
         org = org_repository.upsert_org(db, dto, si_id)
         role_repository.create_roles(db, org)
     business_modules = business_module_repository.add_org_business_module(
@@ -97,8 +97,8 @@ def upsert_organization_with_roles(
 def update_organization_disabled(
     db: Session, user_info: UserReadDTO, si_id: int, org_id: int, disabled: bool
 ):
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.edit")
-    verify_org_write_permission(db, user_info, params)
+    params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.edit")
+    verify_user_permission(db, user_info, params)
     org = org_repository.update_org_disabled(db, org_id, disabled)
 
     if not org:
@@ -120,8 +120,8 @@ def update_organization_disabled(
 def get_users_by_si_and_org(
     db: Session, si_id: int, org_id: int, user_info: UserReadDTO
 ):
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="member.view")
-    verify_org_write_permission(db, user_info, params)
+    params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm="member.view")
+    verify_user_permission(db, user_info, params)
     si_org_ids = org_repository.get_orgs_by_sid(db, si_id)
     org_ids = [org.id for org in si_org_ids]
     is_org_under_si = org_id in org_ids

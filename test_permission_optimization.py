@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.repositories import user_repository
 from app.services.user_service import get_user_access_tree
-from app.domain.access_tree.check_user_access import OrgWriteParamsDTO, can_write_org
+from app.domain.access_tree.check_user_access import PermissionCheckParams, can_write_org
 
 
 def test_permission_query_comparison():
@@ -41,7 +41,7 @@ def test_permission_query_comparison():
             print(f"\n測試: {description}")
             print(f"  參數: si_id={si_id}, org_id={org_id}, perm='{perm}'")
 
-            params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm=perm)
+            params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm=perm)
 
             # 快速路徑
             start_fast = time.perf_counter()

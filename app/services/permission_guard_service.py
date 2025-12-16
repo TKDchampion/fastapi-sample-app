@@ -3,17 +3,17 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.decorators.db_transaction import db_tx
-from app.domain.access_tree.check_user_access import OrgWriteParamsDTO
+from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.domain.exception.domain_exception import DomainException
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import org_repository, user_repository
 
 
 @db_tx
-def verify_org_write_permission(
+def verify_user_permission(
     db: Session,
     user: UserReadDTO,
-    params: OrgWriteParamsDTO,
+    params: PermissionCheckParams,
 ):
     """
     驗證使用者是否有權限。

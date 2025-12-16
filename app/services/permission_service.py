@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from app.decorators.db_transaction import db_tx
-from app.domain.access_tree.check_user_access import OrgWriteParamsDTO
+from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.domain.exception.domain_exception import DomainException
 from app.dtos.permission_dto import RolePermissionDTO, RolePermissionUpdateDTO
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import permission_repository, role_repository
-from app.services.permission_guard_service import verify_org_write_permission
+from app.services.permission_guard_service import verify_user_permission
 
 
 @db_tx
@@ -15,8 +15,8 @@ def get_role_permissions(
     org_id: int,
     user_info: UserReadDTO,
 ):
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.permission.view")
-    verify_org_write_permission(db, user_info, params)
+    params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.view")
+    verify_user_permission(db, user_info, params)
     roles = permission_repository.get_roles_with_permissions(db, org_id)
 
     response = []
@@ -59,8 +59,8 @@ def update_role_permissions(
         )
 
     # 2. Validate user permission
-    params = OrgWriteParamsDTO(si_id=si_id, org_id=org_id, perm="org.permission.edit")
-    verify_org_write_permission(db, user_info, params)
+    params = PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit")
+    verify_user_permission(db, user_info, params)
 
     # 3. Load all valid permission ids (org-only)
     permissions = permission_repository.get_all_permissions_org(db)
