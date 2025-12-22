@@ -1,0 +1,36 @@
+from __future__ import annotations
+from datetime import datetime, timezone
+from sqlalchemy import String, Text, DateTime, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.database import Base
+
+
+class SIEntity(Base):
+    __tablename__ = "si"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    logo: Mapped[str | None] = mapped_column(String, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    disabled: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
+
+    orgs: Mapped[list["OrganizationEntity"]] = relationship(
+        "OrganizationEntity", back_populates="si"
+    )
+
+    permissions: Mapped[list["PermissionEntity"]] = relationship(
+        "PermissionEntity",
+        secondary="si_permissions",
+        back_populates="sis",
+    )

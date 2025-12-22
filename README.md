@@ -48,12 +48,18 @@ source venv/bin/activate
 # Windows
 venv\Scripts\activate
 
+# create and update requirements
+# pip freeze | grep -v -f requirements.txt - >> requirements.txt
+
 # 3. Install dependencies
 pip install -r requirements.txt
 
 # 4. Configure database
 # Edit .env:
-# DATABASE_URL=postgresql://user:password@localhost:5432/your_db
+DATABASE_URL=postgresql://user:password@localhost:5432/your_db
+
+# Update migration version
+alembic revision --autogenerate -m "update models"
 
 # 5. Run migrations
 alembic upgrade head

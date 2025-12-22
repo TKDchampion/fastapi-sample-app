@@ -1,12 +1,7 @@
+# image: google/cloud-sdk:slim //try cicd
 image: google/cloud-sdk:slim
 
-services:
-  - docker:27-dind
-
-variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_DRIVER: overlay2
+services: []
 
 default:
   tags:
@@ -19,6 +14,7 @@ stages:
 
 # -------- Project variables --------
 variables:
+  DOCKER_TLS_CERTDIR: ""
   GCP_PROJECT_ID: adnex-product
   GCP_REGION: asia-east1
   IMAGE: "gcr.io/$GCP_PROJECT_ID/$CI_PROJECT_NAME:$CI_COMMIT_SHA"
