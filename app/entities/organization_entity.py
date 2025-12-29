@@ -54,3 +54,5 @@ class OrganizationEntity(Base):
         secondary="org_business_modules",
         back_populates="organizations",
     )
+
+    report_group_sets: Mapped[list["ReportGroupSetEntity"]] = relationship("ReportGroupSetEntity", back_populates="org")
