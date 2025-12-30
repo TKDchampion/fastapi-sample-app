@@ -111,3 +111,51 @@ def create_report_group(
     db.add(new_group)
     db.flush()
     return new_group
+
+
+def get_report_group_by_id(
+    db: Session, report_group_id: int, report_group_set_id: int
+):
+    """Get report group by ID and verify it belongs to the report_group_set"""
+    return db.execute(
+        select(ReportGroupEntity).where(
+            ReportGroupEntity.id == report_group_id,
+            ReportGroupEntity.report_group_set_id == report_group_set_id,
+        )
+    ).scalar_one_or_none()
+
+
+def update_report_group(
+    db: Session, report_group_id: int, name: str, logo: str | None
+) -> None:
+    """Update report group name and logo"""
+    report_group = db.execute(
+        select(ReportGroupEntity).where(ReportGroupEntity.id == report_group_id)
+    ).scalar_one_or_none()
+
+    if report_group:
+        report_group.name = name
+        report_group.logo = logo
+        db.flush()
+
+
+def update_report_group_order(db: Session, report_group_id: int, order: int) -> None:
+    """Update report group order"""
+    report_group = db.execute(
+        select(ReportGroupEntity).where(ReportGroupEntity.id == report_group_id)
+    ).scalar_one_or_none()
+
+    if report_group:
+        report_group.order = order
+        db.flush()
+
+
+def delete_report_group(db: Session, report_group_id: int) -> None:
+    """Delete report group (cascade deletes reports automatically)"""
+    report_group = db.execute(
+        select(ReportGroupEntity).where(ReportGroupEntity.id == report_group_id)
+    ).scalar_one_or_none()
+
+    if report_group:
+        db.delete(report_group)
+        db.flush()

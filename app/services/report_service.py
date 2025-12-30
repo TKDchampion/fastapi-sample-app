@@ -8,6 +8,7 @@ from app.dtos.report_dto import (
     ReportGroupSetListResponseDTO,
     ReportGroupItemDTO,
     ReportGroupListResponseDTO,
+    ReportGroupOrderItemDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import report_repository
@@ -178,4 +179,151 @@ def create_report_group(
 
     return TextResponseDTO(
         status="success", message="Report group created successfully"
+    )
+
+
+@db_tx
+def update_report_group(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    name: str,
+    logo: str | None,
+    user: UserReadDTO,
+) -> TextResponseDTO:
+    """Update report group name and logo"""
+    verify_user_permission(
+        db,
+        user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
+    )
+
+    report_group_set = report_repository.get_report_group_set_by_id(
+        db, report_group_set_id, org_id
+    )
+
+    if not report_group_set:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group set not found"},
+        )
+
+    report_group = report_repository.get_report_group_by_id(
+        db, report_group_id, report_group_set_id
+    )
+
+    if not report_group:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group not found"},
+        )
+
+    report_repository.update_report_group(db, report_group_id, name, logo)
+
+    return TextResponseDTO(
+        status="success", message="Report group updated successfully"
+    )
+
+
+@db_tx
+def update_report_group_orders(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    orders: list[ReportGroupOrderItemDTO],
+    user: UserReadDTO,
+) -> TextResponseDTO:
+    """Update order for multiple report groups"""
+    verify_user_permission(
+        db,
+        user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
+    )
+
+    report_group_set = report_repository.get_report_group_set_by_id(
+        db, report_group_set_id, org_id
+    )
+
+    if not report_group_set:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group set not found"},
+        )
+
+    order_values = [order_item.order for order_item in orders]
+    if len(order_values) != len(set(order_values)):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "type": "duplicate_order",
+                "msg": "Duplicate order values in request",
+            },
+        )
+
+    for order_item in orders:
+        report_group = report_repository.get_report_group_by_id(
+            db, order_item.report_group_id, report_group_set_id
+        )
+
+        if not report_group:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "type": "not_found",
+                    "msg": f"Report group {order_item.report_group_id} not found",
+                },
+            )
+
+        report_repository.update_report_group_order(
+            db, order_item.report_group_id, order_item.order
+        )
+
+    return TextResponseDTO(
+        status="success", message="Report group orders updated successfully"
+    )
+
+
+@db_tx
+def delete_report_group(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    user: UserReadDTO,
+) -> TextResponseDTO:
+    """Delete report group and all its reports (cascade)"""
+    verify_user_permission(
+        db,
+        user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
+    )
+
+    report_group_set = report_repository.get_report_group_set_by_id(
+        db, report_group_set_id, org_id
+    )
+
+    if not report_group_set:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group set not found"},
+        )
+
+    report_group = report_repository.get_report_group_by_id(
+        db, report_group_id, report_group_set_id
+    )
+
+    if not report_group:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group not found"},
+        )
+
+    report_repository.delete_report_group(db, report_group_id)
+
+    return TextResponseDTO(
+        status="success", message="Report group and all associated reports deleted successfully"
     )

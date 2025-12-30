@@ -31,3 +31,17 @@ class ReportGroupCreateRequestDTO(BaseModel):
     name: str
     logo: str | None = None
     order: int
+
+
+class ReportGroupUpdateRequestDTO(BaseModel):
+    name: str
+    logo: str | None = None
+
+
+class ReportGroupOrderItemDTO(BaseModel):
+    report_group_id: int
+    order: int
+
+
+class ReportGroupOrderUpdateRequestDTO(BaseModel):
+    orders: list[ReportGroupOrderItemDTO]

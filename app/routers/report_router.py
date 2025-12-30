@@ -8,6 +8,8 @@ from app.dtos.report_dto import (
     ReportGroupSetListResponseDTO,
     ReportGroupCreateRequestDTO,
     ReportGroupListResponseDTO,
+    ReportGroupUpdateRequestDTO,
+    ReportGroupOrderUpdateRequestDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services import report_service
@@ -117,4 +119,62 @@ def create_report_group(
     """Create a new report group"""
     return report_service.create_report_group(
         db, si_id, org_id, report_group_set_id, body.name, body.logo, body.order, user
+    )
+
+
+@router.put(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group/{report_group_id}",
+    response_model=TextResponseDTO,
+)
+@router_try()
+def update_report_group(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    body: ReportGroupUpdateRequestDTO,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Update report group name and logo"""
+    return report_service.update_report_group(
+        db, si_id, org_id, report_group_set_id, report_group_id, body.name, body.logo, user
+    )
+
+
+@router.put(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group",
+    response_model=TextResponseDTO,
+)
+@router_try()
+def update_report_group_orders(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    body: ReportGroupOrderUpdateRequestDTO,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Update order for multiple report groups"""
+    return report_service.update_report_group_orders(
+        db, si_id, org_id, report_group_set_id, body.orders, user
+    )
+
+
+@router.delete(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group/{report_group_id}",
+    response_model=TextResponseDTO,
+)
+@router_try()
+def delete_report_group(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Delete report group and all its associated reports"""
+    return report_service.delete_report_group(
+        db, si_id, org_id, report_group_set_id, report_group_id, user
     )
