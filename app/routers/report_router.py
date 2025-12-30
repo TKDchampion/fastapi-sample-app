@@ -10,6 +10,7 @@ from app.dtos.report_dto import (
     ReportGroupListResponseDTO,
     ReportGroupUpdateRequestDTO,
     ReportGroupOrderUpdateRequestDTO,
+    ReportListResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services import report_service
@@ -176,5 +177,24 @@ def delete_report_group(
 ) -> TextResponseDTO:
     """Delete report group and all its associated reports"""
     return report_service.delete_report_group(
+        db, si_id, org_id, report_group_set_id, report_group_id, user
+    )
+
+
+@router.get(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group/{report_group_id}/report",
+    response_model=ReportListResponseDTO,
+)
+@router_try()
+def get_reports(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> ReportListResponseDTO:
+    """Get all reports for a report group"""
+    return report_service.get_reports(
         db, si_id, org_id, report_group_set_id, report_group_id, user
     )

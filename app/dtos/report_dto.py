@@ -45,3 +45,15 @@ class ReportGroupOrderItemDTO(BaseModel):
 
 class ReportGroupOrderUpdateRequestDTO(BaseModel):
     orders: list[ReportGroupOrderItemDTO]
+
+
+class ReportItemDTO(BaseModel):
+    id: int
+    group_id: int
+    name: str
+    looker_url: str
+    order: int
+
+
+class ReportListResponseDTO(BaseModel):
+    reports: list[ReportItemDTO]

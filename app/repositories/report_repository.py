@@ -159,3 +159,22 @@ def delete_report_group(db: Session, report_group_id: int) -> None:
     if report_group:
         db.delete(report_group)
         db.flush()
+
+
+def get_reports_by_group_id(db: Session, report_group_id: int):
+    """Get all reports for a report group"""
+    return (
+        db.execute(
+            select(
+                ReportEntity.id,
+                ReportEntity.group_id,
+                ReportEntity.name,
+                ReportEntity.looker_url,
+                ReportEntity.order,
+            )
+            .where(ReportEntity.group_id == report_group_id)
+            .order_by(ReportEntity.order)
+        )
+        .mappings()
+        .all()
+    )

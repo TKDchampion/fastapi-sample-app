@@ -9,6 +9,8 @@ from app.dtos.report_dto import (
     ReportGroupItemDTO,
     ReportGroupListResponseDTO,
     ReportGroupOrderItemDTO,
+    ReportItemDTO,
+    ReportListResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import report_repository
@@ -327,3 +329,45 @@ def delete_report_group(
     return TextResponseDTO(
         status="success", message="Report group and all associated reports deleted successfully"
     )
+
+
+@db_tx
+def get_reports(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    user: UserReadDTO,
+) -> ReportListResponseDTO:
+    """Get all reports for a report group"""
+    verify_user_permission(
+        db,
+        user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.view"),
+    )
+
+    report_group_set = report_repository.get_report_group_set_by_id(
+        db, report_group_set_id, org_id
+    )
+
+    if not report_group_set:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group set not found"},
+        )
+
+    report_group = report_repository.get_report_group_by_id(
+        db, report_group_id, report_group_set_id
+    )
+
+    if not report_group:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group not found"},
+        )
+
+    reports = report_repository.get_reports_by_group_id(db, report_group_id)
+    items = [ReportItemDTO(**report_data) for report_data in reports]
+
+    return ReportListResponseDTO(reports=items)
