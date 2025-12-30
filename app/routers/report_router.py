@@ -6,6 +6,8 @@ from app.dtos.common_dto import TextResponseDTO
 from app.dtos.report_dto import (
     ReportGroupSetCreateRequestDTO,
     ReportGroupSetListResponseDTO,
+    ReportGroupCreateRequestDTO,
+    ReportGroupListResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services import report_service
@@ -80,4 +82,39 @@ def delete_report_group_set(
     """Delete report group set and all its report groups"""
     return report_service.delete_report_group_set(
         db, si_id, org_id, report_group_set_id, user
+    )
+
+
+@router.get(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group",
+    response_model=ReportGroupListResponseDTO,
+)
+@router_try()
+def get_report_groups(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> ReportGroupListResponseDTO:
+    """Get all report groups for a report group set"""
+    return report_service.get_report_groups(db, si_id, org_id, report_group_set_id, user)
+
+
+@router.post(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group",
+    response_model=TextResponseDTO,
+)
+@router_try()
+def create_report_group(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    body: ReportGroupCreateRequestDTO,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Create a new report group"""
+    return report_service.create_report_group(
+        db, si_id, org_id, report_group_set_id, body.name, body.logo, body.order, user
     )
