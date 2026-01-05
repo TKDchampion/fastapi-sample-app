@@ -14,6 +14,10 @@ class ReportGroupSetCreateRequestDTO(BaseModel):
     name: str
 
 
+class ReportGroupSetCreateResponseDTO(BaseModel):
+    rawData: ReportGroupSetItemDTO
+
+
 class ReportGroupItemDTO(BaseModel):
     report_group_set_id: int
     id: int
@@ -31,6 +35,10 @@ class ReportGroupCreateRequestDTO(BaseModel):
     name: str
     logo: str | None = None
     order: int
+
+
+class ReportGroupCreateResponseDTO(BaseModel):
+    rawData: ReportGroupItemDTO
 
 
 class ReportGroupUpdateRequestDTO(BaseModel):

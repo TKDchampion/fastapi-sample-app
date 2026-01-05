@@ -6,8 +6,10 @@ from app.dtos.common_dto import TextResponseDTO
 from app.dtos.report_dto import (
     ReportGroupSetItemDTO,
     ReportGroupSetListResponseDTO,
+    ReportGroupSetCreateResponseDTO,
     ReportGroupItemDTO,
     ReportGroupListResponseDTO,
+    ReportGroupCreateResponseDTO,
     ReportGroupOrderItemDTO,
     ReportItemDTO,
     ReportListResponseDTO,
@@ -37,7 +39,7 @@ def get_report_group_sets(
 @db_tx
 def create_report_group_set(
     db: Session, si_id: int, org_id: int, name: str, user: UserReadDTO
-) -> TextResponseDTO:
+) -> ReportGroupSetCreateResponseDTO:
     """Create a new report group set"""
     verify_user_permission(
         db,
@@ -45,10 +47,10 @@ def create_report_group_set(
         PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
     )
 
-    report_repository.create_report_group_set(db, org_id, name)
+    new_set = report_repository.create_report_group_set(db, org_id, name)
 
-    return TextResponseDTO(
-        status="success", message="Report group set created successfully"
+    return ReportGroupSetCreateResponseDTO(
+        rawData=ReportGroupSetItemDTO(id=new_set.id, name=new_set.name)
     )
 
 
@@ -150,7 +152,7 @@ def create_report_group(
     logo: str | None,
     order: int,
     user: UserReadDTO,
-) -> TextResponseDTO:
+) -> ReportGroupCreateResponseDTO:
     """Create a new report group"""
     verify_user_permission(
         db,
@@ -177,10 +179,17 @@ def create_report_group(
             },
         )
 
-    report_repository.create_report_group(db, report_group_set_id, name, logo, order)
+    new_group = report_repository.create_report_group(db, report_group_set_id, name, logo, order)
 
-    return TextResponseDTO(
-        status="success", message="Report group created successfully"
+    return ReportGroupCreateResponseDTO(
+        rawData=ReportGroupItemDTO(
+            report_group_set_id=new_group.report_group_set_id,
+            id=new_group.id,
+            name=new_group.name,
+            logo=new_group.logo,
+            order=new_group.order,
+            counts=0
+        )
     )
 
 

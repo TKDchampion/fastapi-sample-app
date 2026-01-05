@@ -6,8 +6,10 @@ from app.dtos.common_dto import TextResponseDTO
 from app.dtos.report_dto import (
     ReportGroupSetCreateRequestDTO,
     ReportGroupSetListResponseDTO,
+    ReportGroupSetCreateResponseDTO,
     ReportGroupCreateRequestDTO,
     ReportGroupListResponseDTO,
+    ReportGroupCreateResponseDTO,
     ReportGroupUpdateRequestDTO,
     ReportGroupOrderUpdateRequestDTO,
     ReportListResponseDTO,
@@ -37,7 +39,7 @@ def get_report_group_sets(
 
 @router.post(
     "/{si_id}/org/{org_id}/report_group_set",
-    response_model=TextResponseDTO,
+    response_model=ReportGroupSetCreateResponseDTO,
 )
 @router_try()
 def create_report_group_set(
@@ -46,7 +48,7 @@ def create_report_group_set(
     body: ReportGroupSetCreateRequestDTO,
     db: Session = Depends(get_db),
     user: UserReadDTO = Depends(token_required),
-) -> TextResponseDTO:
+) -> ReportGroupSetCreateResponseDTO:
     """Create a new report group set"""
     return report_service.create_report_group_set(db, si_id, org_id, body.name, user)
 
@@ -106,7 +108,7 @@ def get_report_groups(
 
 @router.post(
     "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group",
-    response_model=TextResponseDTO,
+    response_model=ReportGroupCreateResponseDTO,
 )
 @router_try()
 def create_report_group(
@@ -116,7 +118,7 @@ def create_report_group(
     body: ReportGroupCreateRequestDTO,
     db: Session = Depends(get_db),
     user: UserReadDTO = Depends(token_required),
-) -> TextResponseDTO:
+) -> ReportGroupCreateResponseDTO:
     """Create a new report group"""
     return report_service.create_report_group(
         db, si_id, org_id, report_group_set_id, body.name, body.logo, body.order, user
