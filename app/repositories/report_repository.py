@@ -178,3 +178,51 @@ def get_reports_by_group_id(db: Session, report_group_id: int):
         .mappings()
         .all()
     )
+
+
+def get_report_by_id(db: Session, report_id: int, group_id: int):
+    """Get report by ID and verify it belongs to the group"""
+    return db.execute(
+        select(ReportEntity).where(
+            ReportEntity.id == report_id,
+            ReportEntity.group_id == group_id,
+        )
+    ).scalar_one_or_none()
+
+
+def create_report(
+    db: Session, group_id: int, name: str, looker_url: str, order: int
+):
+    """Create a new report"""
+    new_report = ReportEntity(
+        group_id=group_id, name=name, looker_url=looker_url, order=order
+    )
+    db.add(new_report)
+    db.flush()
+    return new_report
+
+
+def update_report(
+    db: Session, report_id: int, name: str, looker_url: str, order: int
+) -> None:
+    """Update report"""
+    report = db.execute(
+        select(ReportEntity).where(ReportEntity.id == report_id)
+    ).scalar_one_or_none()
+
+    if report:
+        report.name = name
+        report.looker_url = looker_url
+        report.order = order
+        db.flush()
+
+
+def delete_report(db: Session, report_id: int) -> None:
+    """Delete a single report"""
+    report = db.execute(
+        select(ReportEntity).where(ReportEntity.id == report_id)
+    ).scalar_one_or_none()
+
+    if report:
+        db.delete(report)
+        db.flush()

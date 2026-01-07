@@ -13,6 +13,7 @@ from app.dtos.report_dto import (
     ReportGroupOrderItemDTO,
     ReportItemDTO,
     ReportListResponseDTO,
+    ReportBatchUpdateItemDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import report_repository
@@ -380,3 +381,83 @@ def get_reports(
     items = [ReportItemDTO(**report_data) for report_data in reports]
 
     return ReportListResponseDTO(reports=items)
+
+
+@db_tx
+def batch_update_reports(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    reports: list[ReportBatchUpdateItemDTO],
+    user: UserReadDTO,
+) -> TextResponseDTO:
+    """Batch update reports: create new, update existing, delete missing"""
+    verify_user_permission(
+        db,
+        user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.edit"),
+    )
+
+    report_group_set = report_repository.get_report_group_set_by_id(
+        db, report_group_set_id, org_id
+    )
+
+    if not report_group_set:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group set not found"},
+        )
+
+    report_group = report_repository.get_report_group_by_id(
+        db, report_group_id, report_group_set_id
+    )
+
+    if not report_group:
+        raise HTTPException(
+            status_code=404,
+            detail={"type": "not_found", "msg": "Report group not found"},
+        )
+
+    existing_reports = report_repository.get_reports_by_group_id(db, report_group_id)
+    existing_ids = {report["id"] for report in existing_reports}
+
+    incoming_ids = {report.id for report in reports if report.id is not None}
+
+    ids_to_delete = existing_ids - incoming_ids
+
+    for report_id in ids_to_delete:
+        report_repository.delete_report(db, report_id)
+
+    for report_item in reports:
+        if report_item.id is None:
+            report_repository.create_report(
+                db,
+                report_group_id,
+                report_item.name,
+                report_item.looker_url,
+                report_item.order,
+            )
+        else:
+            existing_report = report_repository.get_report_by_id(
+                db, report_item.id, report_group_id
+            )
+            if existing_report:
+                report_repository.update_report(
+                    db,
+                    report_item.id,
+                    report_item.name,
+                    report_item.looker_url,
+                    report_item.order,
+                )
+            else:
+                report_repository.create_report(
+                    db,
+                    report_group_id,
+                    report_item.name,
+                    report_item.looker_url,
+                    report_item.order,
+                )
+
+    return TextResponseDTO(status="success", message="Reports updated successfully")

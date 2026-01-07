@@ -13,6 +13,7 @@ from app.dtos.report_dto import (
     ReportGroupUpdateRequestDTO,
     ReportGroupOrderUpdateRequestDTO,
     ReportListResponseDTO,
+    ReportBatchUpdateRequestDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services import report_service
@@ -199,4 +200,24 @@ def get_reports(
     """Get all reports for a report group"""
     return report_service.get_reports(
         db, si_id, org_id, report_group_set_id, report_group_id, user
+    )
+
+
+@router.put(
+    "/{si_id}/org/{org_id}/report_group_set/{report_group_set_id}/report_group/{report_group_id}/report",
+    response_model=TextResponseDTO,
+)
+@router_try()
+def batch_update_reports(
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    report_group_id: int,
+    body: ReportBatchUpdateRequestDTO,
+    db: Session = Depends(get_db),
+    user: UserReadDTO = Depends(token_required),
+) -> TextResponseDTO:
+    """Batch update reports: creates new if id is None/doesn't exist, updates if exists, deletes if not in request"""
+    return report_service.batch_update_reports(
+        db, si_id, org_id, report_group_set_id, report_group_id, body.reports, user
     )

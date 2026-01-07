@@ -65,3 +65,14 @@ class ReportItemDTO(BaseModel):
 
 class ReportListResponseDTO(BaseModel):
     reports: list[ReportItemDTO]
+
+
+class ReportBatchUpdateItemDTO(BaseModel):
+    id: int | None = None
+    name: str
+    looker_url: str
+    order: int
+
+
+class ReportBatchUpdateRequestDTO(BaseModel):
+    reports: list[ReportBatchUpdateItemDTO]
