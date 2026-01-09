@@ -28,4 +28,4 @@ class ReportGroupEntity(Base):
     )
 
     report_group_set: Mapped["ReportGroupSetEntity"] = relationship("ReportGroupSetEntity", back_populates="report_groups")
-    reports: Mapped[list["ReportEntity"]] = relationship("ReportEntity", back_populates="group")
+    reports: Mapped[list["ReportEntity"]] = relationship("ReportEntity", back_populates="group", passive_deletes=True)

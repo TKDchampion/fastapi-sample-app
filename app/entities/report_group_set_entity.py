@@ -26,5 +26,5 @@ class ReportGroupSetEntity(Base):
     )
 
     org: Mapped["OrganizationEntity"] = relationship("OrganizationEntity", back_populates="report_group_sets")
-    report_groups: Mapped[list["ReportGroupEntity"]] = relationship("ReportGroupEntity", back_populates="report_group_set")
-    user_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = relationship("UserReportGroupSetAccessEntity", back_populates="report_group_set")
+    report_groups: Mapped[list["ReportGroupEntity"]] = relationship("ReportGroupEntity", back_populates="report_group_set", passive_deletes=True)
+    user_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = relationship("UserReportGroupSetAccessEntity", back_populates="report_group_set", passive_deletes=True)
