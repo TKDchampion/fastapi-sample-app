@@ -15,6 +15,7 @@ from app.dtos.user_dto import (
     UserReadDTO,
 )
 from app.dtos.common_dto import TextResponseDTO
+from app.dtos.report_dto import UserReportGroupItemDTO
 
 
 @db_tx
@@ -110,3 +111,21 @@ def set_user_report_group_sets(
         status="success",
         message="User report group set accesses updated",
     )
+
+
+@db_tx
+def get_user_report_groups(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    current_user: UserReadDTO,
+) -> List[UserReportGroupItemDTO]:
+    """獲取當前用戶在特定組織下可訪問的所有 report_groups"""
+    # 驗證用戶對該 org 的訪問權限
+    verify_user_permission(
+        db,
+        current_user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+    )
+
+    return user_repository.get_user_report_groups(db, current_user.id, org_id)

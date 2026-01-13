@@ -76,3 +76,9 @@ class ReportBatchUpdateItemDTO(BaseModel):
 
 class ReportBatchUpdateRequestDTO(BaseModel):
     reports: list[ReportBatchUpdateItemDTO]
+
+
+class UserReportGroupItemDTO(BaseModel):
+    report_group_set_id: int
+    report_group_id: int
+    report_group_name: str

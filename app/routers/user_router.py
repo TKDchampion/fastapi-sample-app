@@ -9,6 +9,7 @@ from app.dtos.user_dto import (
     UserReadDTO,
 )
 from app.dtos.common_dto import TextResponseDTO
+from app.dtos.report_dto import UserReportGroupItemDTO
 from typing import List
 from app.services.jwt_service import token_required
 
@@ -68,3 +69,21 @@ def set_user_report_group_sets(
     return user_service.set_user_report_group_sets(
         db, si_id, org_id, user_id, group_set_ids, user_info
     )
+
+
+@si_router.get(
+    "/{si_id}/org/{org_id}/report_groups",
+    response_model=List[UserReportGroupItemDTO],
+)
+@router_try()
+def get_user_report_groups(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> List[UserReportGroupItemDTO]:
+    """
+    Get report groups accessible by the current user within a specific organization.
+    Returns a list of report groups mapped from user's assigned report group sets, sorted by order.
+    """
+    return user_service.get_user_report_groups(db, si_id, org_id, user_info)

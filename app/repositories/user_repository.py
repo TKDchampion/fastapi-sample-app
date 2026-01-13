@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import List
 from sqlalchemy import and_, case, literal, select, or_, exists, func, delete
 from sqlalchemy.orm import Session, aliased
@@ -9,7 +8,9 @@ from app.entities.si_entity import SIEntity
 from app.entities.user_entity import UserEntity
 from app.entities.user_report_group_set_access_entity import UserReportGroupSetAccessEntity
 from app.entities.report_group_set_entity import ReportGroupSetEntity
+from app.entities.report_group_entity import ReportGroupEntity
 from app.dtos.user_dto import UserCreateDTO
+from app.dtos.report_dto import UserReportGroupItemDTO
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
     role_permissions as role_permissions_table,
@@ -359,3 +360,46 @@ def replace_user_report_group_set_accesses(
                 report_group_set_id=group_set_id,
             )
             db.add(access)
+
+
+def get_user_report_groups(
+    db: Session, user_id: int, org_id: int
+) -> List[UserReportGroupItemDTO]:
+    """
+    獲取用戶在特定組織下可訪問的所有 report_groups
+    通過 user_report_group_set_accesses -> report_group_sets -> report_groups 連接
+    按 report_group.order 排序
+    """
+    q = (
+        select(
+            ReportGroupSetEntity.id.label("report_group_set_id"),
+            ReportGroupEntity.id.label("report_group_id"),
+            ReportGroupEntity.name.label("report_group_name"),
+            ReportGroupEntity.order,
+        )
+        .select_from(UserReportGroupSetAccessEntity)
+        .join(
+            ReportGroupSetEntity,
+            ReportGroupSetEntity.id == UserReportGroupSetAccessEntity.report_group_set_id,
+        )
+        .join(
+            ReportGroupEntity,
+            ReportGroupEntity.report_group_set_id == ReportGroupSetEntity.id,
+        )
+        .where(
+            and_(
+                UserReportGroupSetAccessEntity.user_id == user_id,
+                ReportGroupSetEntity.org_id == org_id,
+            )
+        )
+        .order_by(ReportGroupEntity.order)
+    )
+    rows = db.execute(q).all()
+    return [
+        UserReportGroupItemDTO(
+            report_group_set_id=row.report_group_set_id,
+            report_group_id=row.report_group_id,
+            report_group_name=row.report_group_name,
+        )
+        for row in rows
+    ]
