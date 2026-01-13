@@ -66,6 +66,7 @@ app.add_middleware(
 
 Routers = [
     user_router.router,
+    user_router.si_router,
     auth_router.router,
     si_router.router,
     org_router.org_router,

@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
-from sqlalchemy import and_, case, literal, select, or_, exists, func
+from typing import List
+from sqlalchemy import and_, case, literal, select, or_, exists, func, delete
 from sqlalchemy.orm import Session, aliased
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.permission_entity import PermissionEntity
 from app.entities.role_entity import RoleEntity
 from app.entities.si_entity import SIEntity
 from app.entities.user_entity import UserEntity
+from app.entities.user_report_group_set_access_entity import UserReportGroupSetAccessEntity
+from app.entities.report_group_set_entity import ReportGroupSetEntity
 from app.dtos.user_dto import UserCreateDTO
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
@@ -321,3 +324,38 @@ def check_user_has_permission_fast(
         )
 
     return db.scalar(select(exists(subq)))
+
+
+def get_report_group_sets_by_ids_and_org(
+    db: Session, group_set_ids: List[int], org_id: int
+) -> List[ReportGroupSetEntity]:
+    """驗證 group_set_ids 是否都屬於該 org"""
+    return db.scalars(
+        select(ReportGroupSetEntity).where(
+            and_(
+                ReportGroupSetEntity.id.in_(group_set_ids),
+                ReportGroupSetEntity.org_id == org_id,
+            )
+        )
+    ).all()
+
+
+def replace_user_report_group_set_accesses(
+    db: Session, user_id: int, group_set_ids: List[int]
+) -> None:
+    """刪除該 user 原有的 report_group_set_accesses，並新增新的"""
+    # 刪除該 user 所有現有的 accesses
+    db.execute(
+        delete(UserReportGroupSetAccessEntity).where(
+            UserReportGroupSetAccessEntity.user_id == user_id
+        )
+    )
+
+    # 批量新增新的 accesses
+    if group_set_ids:
+        for group_set_id in group_set_ids:
+            access = UserReportGroupSetAccessEntity(
+                user_id=user_id,
+                report_group_set_id=group_set_id,
+            )
+            db.add(access)
