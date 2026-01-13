@@ -135,33 +135,28 @@ def get_users_by_si_and_org(
 
     for user in users:
         user_id = user.user_id
-
         role_name = user.role_name or "owner"
 
-        if user_id in user_map:
-            if user_map[user_id]["role_name"] == "owner":
-                continue
+        if user_id not in user_map:
+            user_map[user_id] = {
+                "user_id": user.user_id,
+                "name": user.name,
+                "email": user.email,
+                "picture": user.picture,
+                "role_name": role_name,
+                "role_id": user.role_id,
+                "report_group_set": [],
+            }
+        else:
+            # 處理 role_name 優先級（owner 優先）
+            if role_name == "owner" and user_map[user_id]["role_name"] != "owner":
+                user_map[user_id]["role_name"] = "owner"
+                user_map[user_id]["role_id"] = user.role_id
 
-            if role_name == "owner":
-                user_map[user_id] = {
-                    "user_id": user.user_id,
-                    "name": user.name,
-                    "email": user.email,
-                    "picture": user.picture,
-                    "role_name": "owner",
-                }
-                continue
-
-            # 否則 role_name 不是 owner → 如果 user 沒 owner，保持第一個
-            continue
-
-        user_map[user_id] = {
-            "user_id": user.user_id,
-            "name": user.name,
-            "email": user.email,
-            "picture": user.picture,
-            "role_name": role_name,
-            "role_id": user.role_id,
-        }
+        # 收集 report_group_set（避免重複）
+        if user.report_group_set_id is not None:
+            rgs_entry = {"id": user.report_group_set_id, "name": user.report_group_set_name}
+            if rgs_entry not in user_map[user_id]["report_group_set"]:
+                user_map[user_id]["report_group_set"].append(rgs_entry)
 
     return list(user_map.values())

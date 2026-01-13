@@ -7,6 +7,8 @@ from app.entities.associations_entity import (
 )
 from app.entities.role_entity import RoleEntity
 from app.entities.user_entity import UserEntity
+from app.entities.user_report_group_set_access_entity import UserReportGroupSetAccessEntity
+from app.entities.report_group_set_entity import ReportGroupSetEntity
 
 
 def get_orgs_by_sid(db: Session, si_id: int):
@@ -137,10 +139,20 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
             RoleEntity.id.label("role_id"),
             RoleEntity.name.label("role_name"),
             RoleEntity.description.label("role_desc"),
+            ReportGroupSetEntity.id.label("report_group_set_id"),
+            ReportGroupSetEntity.name.label("report_group_set_name"),
         )
         .select_from(UserEntity)
         .join(UR, UR.c.user_id == UserEntity.id)
         .outerjoin(RoleEntity, RoleEntity.id == UR.c.role_id)
+        .outerjoin(
+            UserReportGroupSetAccessEntity,
+            UserReportGroupSetAccessEntity.user_id == UserEntity.id
+        )
+        .outerjoin(
+            ReportGroupSetEntity,
+            ReportGroupSetEntity.id == UserReportGroupSetAccessEntity.report_group_set_id
+        )
         .where(
             or_(
                 and_(UR.c.scope_type == "super", UR.c.scope_id == 0),
