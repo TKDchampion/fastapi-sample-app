@@ -82,3 +82,13 @@ class UserReportGroupItemDTO(BaseModel):
     report_group_set_id: int
     report_group_id: int
     report_group_name: str
+
+
+class BusinessModuleItemDTO(BaseModel):
+    id: int
+    name: str
+
+
+class OrgSidebarResponseDTO(BaseModel):
+    report_groups: list[UserReportGroupItemDTO]
+    business_modules: list[BusinessModuleItemDTO]

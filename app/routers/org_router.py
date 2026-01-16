@@ -13,6 +13,7 @@ from app.dtos.org_dto import (
     OrgUpsertResponseDTO,
     OrgListResponseDTO,
 )
+from app.dtos.report_dto import OrgSidebarResponseDTO
 from app.services import org_service
 from app.dtos.user_dto import (
     UserReadDTO,
@@ -132,3 +133,18 @@ def get_org_by_sid_oid(
     """Get organization detail"""
 
     return org_service.get_org_by_sid_oid(db, si_id, org_id, user_info)
+
+
+@si_router.get("/{si_id}/org/{org_id}/sidebar", response_model=OrgSidebarResponseDTO)
+@router_try()
+def get_org_sidebar(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> OrgSidebarResponseDTO:
+    """
+    Get sidebar data for a specific organization.
+    Returns report groups accessible by the current user and business modules of the org.
+    """
+    return org_service.get_org_sidebar(db, si_id, org_id, user_info)
