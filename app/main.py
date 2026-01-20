@@ -72,6 +72,7 @@ Routers = [
     org_router.org_router,
     org_router.si_router,
     business_module_router.router,
+    business_module_router.google_sheet_router,
     role_router.si_router,
     role_router.org_router,
     role_router.role_router,

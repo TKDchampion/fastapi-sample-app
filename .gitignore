@@ -6,5 +6,6 @@ __pycache__/
 *.pyd
 .mypy_cache/
 .Python
+*.service-account.json
 service-account.json
 CLAUDE.md
