@@ -17,6 +17,8 @@ class OrganizationEntity(Base):
     logo: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text)
     disabled: Mapped[bool] = mapped_column(default=False, nullable=False)
+    table_location: Mapped[str | None] = mapped_column(String, nullable=True)
+    type: Mapped[str | None] = mapped_column(String, nullable=True)
     contract_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
