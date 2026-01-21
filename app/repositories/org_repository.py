@@ -155,7 +155,10 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
         )
         .outerjoin(
             ReportGroupSetEntity,
-            ReportGroupSetEntity.id == UserReportGroupSetAccessEntity.report_group_set_id
+            and_(
+                ReportGroupSetEntity.id == UserReportGroupSetAccessEntity.report_group_set_id,
+                ReportGroupSetEntity.org_id == org_id
+            )
         )
         .where(
             or_(
