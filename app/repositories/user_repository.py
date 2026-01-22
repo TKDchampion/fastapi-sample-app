@@ -375,6 +375,7 @@ def get_user_report_groups(
             ReportGroupSetEntity.id.label("report_group_set_id"),
             ReportGroupEntity.id.label("report_group_id"),
             ReportGroupEntity.name.label("report_group_name"),
+            ReportGroupEntity.logo.label("report_group_logo"),
             ReportGroupEntity.order,
         )
         .select_from(UserReportGroupSetAccessEntity)
@@ -400,6 +401,7 @@ def get_user_report_groups(
             report_group_set_id=row.report_group_set_id,
             report_group_id=row.report_group_id,
             report_group_name=row.report_group_name,
+            report_group_logo=row.report_group_logo,
         )
         for row in rows
     ]

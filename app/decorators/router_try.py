@@ -2,6 +2,8 @@ import asyncio
 from functools import wraps
 from fastapi import HTTPException
 
+from app.domain.exception.domain_exception import DomainException
+
 
 def router_try():
     def decorator(func):
@@ -13,6 +15,12 @@ def router_try():
 
                 except HTTPException:
                     raise
+
+                except DomainException as e:
+                    raise HTTPException(
+                        status_code=e.code,
+                        detail={"type": e.type, "msg": e.msg},
+                    )
 
                 except Exception as e:
                     raise HTTPException(
@@ -29,6 +37,12 @@ def router_try():
 
                 except HTTPException:
                     raise
+
+                except DomainException as e:
+                    raise HTTPException(
+                        status_code=e.code,
+                        detail={"type": e.type, "msg": e.msg},
+                    )
 
                 except Exception as e:
                     # 統一輸出 500

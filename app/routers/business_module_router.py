@@ -8,10 +8,11 @@ from app.dtos.user_dto import UserReadDTO
 from app.services import business_module_service
 from app.services.jwt_service import token_required
 from app.services import google_sheet_service
-from app.services import insight_service
 
 
 router = APIRouter(prefix="/business_module", tags=["Business_module"])
+si_router = APIRouter(prefix="/business_module", tags=["Business_module"])
+
 google_sheet_router = APIRouter(prefix="/google_sheet", tags=["Business_module"])
 
 
@@ -50,16 +51,15 @@ def get_google_sheet_records(
     )
 
 
-@router.get("/insight-info")
+@si_router.get("/{si_id}/org/{org_id}/insight-info")
 @router_try()
 async def get_insight_info(
-    table_location: str = Query(..., description="BigQuery table location"),
-    type: str = Query(..., description="Save type"),
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
 ) -> Any:
     """
-    Call Cloud Run insight API to get info (GET with query parameters).
+    Call Cloud Run insight API to get info based on organization's table_location and type.
     """
-    return await insight_service.get_insight_info(
-        table_location=table_location,
-        type=type,
-    )
+    return await business_module_service.get_org_insight_info(db, si_id, org_id)

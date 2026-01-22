@@ -82,6 +82,7 @@ class UserReportGroupItemDTO(BaseModel):
     report_group_set_id: int
     report_group_id: int
     report_group_name: str
+    report_group_logo: str | None
 
 
 class BusinessModuleItemDTO(BaseModel):
