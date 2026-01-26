@@ -167,17 +167,19 @@ def get_users_by_si_and_org(
 def get_org_sidebar(
     db: Session, si_id: int, org_id: int, current_user: UserReadDTO
 ) -> OrgSidebarResponseDTO:
-    """獲取當前用戶在特定組織下的 sidebar 資料（report_groups 和 business_modules）"""
+    """獲取當前用戶在特定組織下的 sidebar 資料（report_groups_sets 和 business_modules）"""
     verify_user_permission(
         db,
         current_user,
         PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
     )
 
-    report_groups = user_repository.get_user_report_groups(db, current_user.id, org_id)
+    report_groups_sets = user_repository.get_user_report_groups_grouped(
+        db, current_user.id, org_id
+    )
     business_modules = org_repository.get_org_business_modules(db, org_id)
 
     return OrgSidebarResponseDTO(
-        report_groups=report_groups,
+        report_groups_sets=report_groups_sets,
         business_modules=business_modules,
     )

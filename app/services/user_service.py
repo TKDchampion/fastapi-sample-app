@@ -105,7 +105,9 @@ def set_user_report_group_sets(
             )
 
     # 執行取代
-    user_repository.replace_user_report_group_set_accesses(db, target_user_id, group_set_ids)
+    user_repository.replace_user_report_group_set_accesses(
+        db, target_user_id, group_set_ids
+    )
 
     return TextResponseDTO(
         status="success",
@@ -113,19 +115,19 @@ def set_user_report_group_sets(
     )
 
 
-@db_tx
-def get_user_report_groups(
-    db: Session,
-    si_id: int,
-    org_id: int,
-    current_user: UserReadDTO,
-) -> List[UserReportGroupItemDTO]:
-    """獲取當前用戶在特定組織下可訪問的所有 report_groups"""
-    # 驗證用戶對該 org 的訪問權限
-    verify_user_permission(
-        db,
-        current_user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
-    )
+# @db_tx
+# def get_user_report_groups(
+#     db: Session,
+#     si_id: int,
+#     org_id: int,
+#     current_user: UserReadDTO,
+# ) -> List[UserReportGroupItemDTO]:
+#     """獲取當前用戶在特定組織下可訪問的所有 report_groups"""
+#     # 驗證用戶對該 org 的訪問權限
+#     verify_user_permission(
+#         db,
+#         current_user,
+#         PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+#     )
 
-    return user_repository.get_user_report_groups(db, current_user.id, org_id)
+#     return user_repository.get_user_report_groups(db, current_user.id, org_id)
