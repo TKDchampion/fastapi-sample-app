@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, AsyncIterator
 from sqlalchemy.orm import Session
 from app.decorators.db_transaction import db_tx
 from app.domain.exception.domain_exception import DomainException
 from app.dtos.business_module_dto import BusinessModuleDTO
+from app.dtos.insight_dto import InsightAnalysisRequestDTO
 from app.repositories import business_module_repository
 from app.repositories import org_repository
 from app.services import insight_service
@@ -42,3 +43,48 @@ async def get_org_insight_info(db: Session, si_id: int, org_id: int) -> Any:
         table_location=org.table_location,
         type=org.type,
     )
+
+
+async def post_org_insight_analysis_stream(
+    db: Session,
+    si_id: int,
+    org_id: int,
+    body: InsightAnalysisRequestDTO,
+) -> AsyncIterator[bytes]:
+    """
+    Post insight analysis request and return streaming response.
+    Validation runs before returning the stream generator.
+    Yields NDJSON bytes from InsightStreamResponseDTO objects.
+    """
+    org = org_repository.get_org_by_sid_oid(db, si_id, org_id)
+    if not org:
+        raise DomainException(
+            msg=f"Organization {org_id} not found under SI {si_id}",
+            type="not_found",
+            code=404,
+        )
+    has_insight_module = any(m.id == 2 for m in org.business_modules)
+    if not has_insight_module:
+        raise DomainException(
+            msg="Organization does not have access to insight module",
+            type="no_access",
+            code=403,
+        )
+    if not org.table_location or not org.type:
+        raise DomainException(
+            msg="Organization missing table_location or type configuration",
+            type="invalid_config",
+            code=400,
+        )
+
+    async def stream_generator() -> AsyncIterator[bytes]:
+        async for dto in insight_service.post_analysis_stream(
+            table_location=org.table_location,
+            type=org.type,
+            ads_str=body.ads_str,
+            start_date=body.start_date,
+            end_date=body.end_date,
+        ):
+            yield dto.model_dump_json().encode("utf-8") + b"\n"
+
+    return stream_generator()

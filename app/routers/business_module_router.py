@@ -1,9 +1,15 @@
 from typing import List, Optional, Any, Dict
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.decorators import router_try
 from app.dtos.business_module_dto import BusinessModuleDTO
+from app.dtos.insight_dto import (
+    InsightAnalysisRequestDTO,
+    InsightAdsResponseDTO,
+    InsightStreamResponseDTO,
+)
 from app.dtos.user_dto import UserReadDTO
 from app.services import business_module_service
 from app.services.jwt_service import token_required
@@ -51,15 +57,44 @@ def get_google_sheet_records(
     )
 
 
-@si_router.get("/{si_id}/org/{org_id}/insight-info")
+@si_router.get(
+    "/{si_id}/org/{org_id}/insight-ads",
+    response_model=InsightAdsResponseDTO,
+)
 @router_try()
-async def get_insight_info(
+async def get_insight_ads(
     si_id: int,
     org_id: int,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
-) -> Any:
+) -> InsightAdsResponseDTO:
     """
-    Call Cloud Run insight API to get info based on organization's table_location and type.
+    Get available ads list for insight analysis.
     """
     return await business_module_service.get_org_insight_info(db, si_id, org_id)
+
+
+@si_router.post(
+    "/{si_id}/org/{org_id}/insight-analysis",
+    response_model=InsightStreamResponseDTO,
+)
+@router_try()
+async def post_insight_analysis(
+    si_id: int,
+    org_id: int,
+    body: InsightAnalysisRequestDTO,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> StreamingResponse:
+    """
+    Post insight analysis request and return streaming NDJSON response.
+
+    Response format (each line is a JSON object):
+    - `{"type": "start", "message": "=== Run starting ==="}`
+    - `{"type": "progress", "message": "..."}`
+    - `{"type": "result", "message": "..."}`
+    """
+    stream = await business_module_service.post_org_insight_analysis_stream(
+        db, si_id, org_id, body
+    )
+    return StreamingResponse(stream, media_type="text/event-stream")
