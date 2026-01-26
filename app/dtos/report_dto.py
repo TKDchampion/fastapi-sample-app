@@ -88,6 +88,7 @@ class UserReportGroupItemDTO(BaseModel):
 class SidebarReportGroupItemDTO(BaseModel):
     report_group_id: int
     report_group_name: str
+    report_group_logo: str
 
 
 class SidebarReportGroupSetItemDTO(BaseModel):

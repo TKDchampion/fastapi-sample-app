@@ -428,6 +428,7 @@ def get_user_report_groups_grouped(
             ReportGroupEntity.id.label("report_group_id"),
             ReportGroupEntity.name.label("report_group_name"),
             ReportGroupEntity.order,
+            ReportGroupEntity.logo.label("report_group_logo"),
         )
         .select_from(UserReportGroupSetAccessEntity)
         .join(
@@ -459,6 +460,7 @@ def get_user_report_groups_grouped(
             SidebarReportGroupItemDTO(
                 report_group_id=row.report_group_id,
                 report_group_name=row.report_group_name,
+                report_group_logo=row.report_group_logo,
             )
         )
 
