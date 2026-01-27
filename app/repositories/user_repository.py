@@ -245,8 +245,6 @@ def check_user_has_permission_fast(
                             SIEntity.disabled == False,
                             OrganizationEntity.id == org_id,
                             OrganizationEntity.disabled == False,
-                            OrganizationEntity.contract_start <= now,
-                            OrganizationEntity.contract_end >= now,
                         ),
                         # 路徑 3: Org user 直接訪問該 org
                         and_(
@@ -312,8 +310,6 @@ def check_user_has_permission_fast(
                             SIEntity.disabled == False,
                             OrganizationEntity.id == org_id,
                             OrganizationEntity.disabled == False,
-                            OrganizationEntity.contract_start <= now,
-                            OrganizationEntity.contract_end >= now,
                         ),
                         # 路徑 3: Org user 有特定權限
                         and_(
