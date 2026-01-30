@@ -28,7 +28,7 @@ def get_report_group_sets(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.view"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.view"),
     )
 
     sets = report_repository.get_report_group_sets_by_org(db, org_id)
@@ -45,7 +45,7 @@ def create_report_group_set(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
     )
 
     new_set = report_repository.create_report_group_set(db, org_id, name)
@@ -68,7 +68,7 @@ def update_report_group_set(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -96,7 +96,7 @@ def delete_report_group_set(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -171,7 +171,9 @@ def create_report_group(
             detail={"type": "not_found", "msg": "Report group set not found"},
         )
 
-    if report_repository.check_report_group_order_exists(db, report_group_set_id, order):
+    if report_repository.check_report_group_order_exists(
+        db, report_group_set_id, order
+    ):
         raise HTTPException(
             status_code=400,
             detail={
@@ -180,7 +182,9 @@ def create_report_group(
             },
         )
 
-    new_group = report_repository.create_report_group(db, report_group_set_id, name, logo, order)
+    new_group = report_repository.create_report_group(
+        db, report_group_set_id, name, logo, order
+    )
 
     return ReportGroupCreateResponseDTO(
         rawData=ReportGroupItemDTO(
@@ -189,7 +193,7 @@ def create_report_group(
             name=new_group.name,
             logo=new_group.logo,
             order=new_group.order,
-            counts=0
+            counts=0,
         )
     )
 
@@ -337,7 +341,8 @@ def delete_report_group(
     report_repository.delete_report_group(db, report_group_id)
 
     return TextResponseDTO(
-        status="success", message="Report group and all associated reports deleted successfully"
+        status="success",
+        message="Report group and all associated reports deleted successfully",
     )
 
 
