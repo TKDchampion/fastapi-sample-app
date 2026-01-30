@@ -82,7 +82,7 @@ def set_user_report_group_sets(
     verify_user_permission(
         db,
         current_user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="member.edit"),
     )
 
     # 驗證目標 user 是否存在

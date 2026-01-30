@@ -68,7 +68,7 @@ def update_report_group_set(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="member.edit"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.edit"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
