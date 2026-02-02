@@ -20,6 +20,7 @@ from app.dtos.org_dto import (
     OrgListItemDTO,
     OrgListResponseDTO,
 )
+from app.dtos.report_dto import OrgSidebarResponseDTO
 from app.services.permission_guard_service import verify_user_permission
 
 logger = logging.getLogger(__name__)
@@ -135,33 +136,53 @@ def get_users_by_si_and_org(
 
     for user in users:
         user_id = user.user_id
-
         role_name = user.role_name or "owner"
 
-        if user_id in user_map:
-            if user_map[user_id]["role_name"] == "owner":
-                continue
+        if user_id not in user_map:
+            user_map[user_id] = {
+                "user_id": user.user_id,
+                "name": user.name,
+                "email": user.email,
+                "picture": user.picture,
+                "role_name": role_name,
+                "role_id": user.role_id,
+                "report_group_set": [],
+            }
+        else:
+            # 處理 role_name 優先級（owner 優先）
+            if role_name == "owner" and user_map[user_id]["role_name"] != "owner":
+                user_map[user_id]["role_name"] = "owner"
+                user_map[user_id]["role_id"] = user.role_id
 
-            if role_name == "owner":
-                user_map[user_id] = {
-                    "user_id": user.user_id,
-                    "name": user.name,
-                    "email": user.email,
-                    "picture": user.picture,
-                    "role_name": "owner",
-                }
-                continue
-
-            # 否則 role_name 不是 owner → 如果 user 沒 owner，保持第一個
-            continue
-
-        user_map[user_id] = {
-            "user_id": user.user_id,
-            "name": user.name,
-            "email": user.email,
-            "picture": user.picture,
-            "role_name": role_name,
-            "role_id": user.role_id,
-        }
+        # 收集 report_group_set（避免重複）
+        if user.report_group_set_id is not None:
+            rgs_entry = {
+                "id": user.report_group_set_id,
+                "name": user.report_group_set_name,
+            }
+            if rgs_entry not in user_map[user_id]["report_group_set"]:
+                user_map[user_id]["report_group_set"].append(rgs_entry)
 
     return list(user_map.values())
+
+
+@db_tx
+def get_org_sidebar(
+    db: Session, si_id: int, org_id: int, current_user: UserReadDTO
+) -> OrgSidebarResponseDTO:
+    """獲取當前用戶在特定組織下的 sidebar 資料（report_groups_sets 和 business_modules）"""
+    verify_user_permission(
+        db,
+        current_user,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+    )
+
+    report_groups_sets = user_repository.get_user_report_groups_grouped(
+        db, current_user.id, org_id
+    )
+    business_modules = org_repository.get_org_business_modules(db, org_id)
+
+    return OrgSidebarResponseDTO(
+        report_groups_sets=report_groups_sets,
+        business_modules=business_modules,
+    )

@@ -4,4 +4,8 @@ from .organization_entity import OrganizationEntity
 from .role_entity import RoleEntity
 from .permission_entity import PermissionEntity
 from .business_module_entity import BusinessModuleEntity
+from .report_group_set_entity import ReportGroupSetEntity
+from .report_group_entity import ReportGroupEntity
+from .report_entity import ReportEntity
+from .user_report_group_set_access_entity import UserReportGroupSetAccessEntity
 from . import associations_entity

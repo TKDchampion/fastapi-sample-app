@@ -1,12 +1,22 @@
-from datetime import datetime, timezone
-from sqlalchemy import and_, case, literal, select, or_, exists, func
+from typing import List
+from sqlalchemy import and_, case, literal, select, or_, exists, func, delete
 from sqlalchemy.orm import Session, aliased
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.permission_entity import PermissionEntity
 from app.entities.role_entity import RoleEntity
 from app.entities.si_entity import SIEntity
 from app.entities.user_entity import UserEntity
+from app.entities.user_report_group_set_access_entity import (
+    UserReportGroupSetAccessEntity,
+)
+from app.entities.report_group_set_entity import ReportGroupSetEntity
+from app.entities.report_group_entity import ReportGroupEntity
 from app.dtos.user_dto import UserCreateDTO
+from app.dtos.report_dto import (
+    UserReportGroupItemDTO,
+    SidebarReportGroupSetItemDTO,
+    SidebarReportGroupItemDTO,
+)
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
     role_permissions as role_permissions_table,
@@ -235,8 +245,6 @@ def check_user_has_permission_fast(
                             SIEntity.disabled == False,
                             OrganizationEntity.id == org_id,
                             OrganizationEntity.disabled == False,
-                            OrganizationEntity.contract_start <= now,
-                            OrganizationEntity.contract_end >= now,
                         ),
                         # 路徑 3: Org user 直接訪問該 org
                         and_(
@@ -302,8 +310,6 @@ def check_user_has_permission_fast(
                             SIEntity.disabled == False,
                             OrganizationEntity.id == org_id,
                             OrganizationEntity.disabled == False,
-                            OrganizationEntity.contract_start <= now,
-                            OrganizationEntity.contract_end >= now,
                         ),
                         # 路徑 3: Org user 有特定權限
                         and_(
@@ -321,3 +327,143 @@ def check_user_has_permission_fast(
         )
 
     return db.scalar(select(exists(subq)))
+
+
+def get_report_group_sets_by_ids_and_org(
+    db: Session, group_set_ids: List[int], org_id: int
+) -> List[ReportGroupSetEntity]:
+    """驗證 group_set_ids 是否都屬於該 org"""
+    return db.scalars(
+        select(ReportGroupSetEntity).where(
+            and_(
+                ReportGroupSetEntity.id.in_(group_set_ids),
+                ReportGroupSetEntity.org_id == org_id,
+            )
+        )
+    ).all()
+
+
+def replace_user_report_group_set_accesses(
+    db: Session, user_id: int, group_set_ids: List[int]
+) -> None:
+    """刪除該 user 原有的 report_group_set_accesses，並新增新的"""
+    # 刪除該 user 所有現有的 accesses
+    db.execute(
+        delete(UserReportGroupSetAccessEntity).where(
+            UserReportGroupSetAccessEntity.user_id == user_id
+        )
+    )
+
+    # 批量新增新的 accesses
+    if group_set_ids:
+        for group_set_id in group_set_ids:
+            access = UserReportGroupSetAccessEntity(
+                user_id=user_id,
+                report_group_set_id=group_set_id,
+            )
+            db.add(access)
+
+
+# def get_user_report_groups(
+#     db: Session, user_id: int, org_id: int
+# ) -> List[UserReportGroupItemDTO]:
+#     """
+#     獲取用戶在特定組織下可訪問的所有 report_groups
+#     通過 user_report_group_set_accesses -> report_group_sets -> report_groups 連接
+#     按 report_group.order 排序
+#     """
+#     q = (
+#         select(
+#             ReportGroupSetEntity.id.label("report_group_set_id"),
+#             ReportGroupEntity.id.label("report_group_id"),
+#             ReportGroupEntity.name.label("report_group_name"),
+#             ReportGroupEntity.logo.label("report_group_logo"),
+#             ReportGroupEntity.order,
+#         )
+#         .select_from(UserReportGroupSetAccessEntity)
+#         .join(
+#             ReportGroupSetEntity,
+#             ReportGroupSetEntity.id
+#             == UserReportGroupSetAccessEntity.report_group_set_id,
+#         )
+#         .join(
+#             ReportGroupEntity,
+#             ReportGroupEntity.report_group_set_id == ReportGroupSetEntity.id,
+#         )
+#         .where(
+#             and_(
+#                 UserReportGroupSetAccessEntity.user_id == user_id,
+#                 ReportGroupSetEntity.org_id == org_id,
+#             )
+#         )
+#         .order_by(ReportGroupEntity.order)
+#     )
+#     rows = db.execute(q).all()
+#     return [
+#         UserReportGroupItemDTO(
+#             report_group_set_id=row.report_group_set_id,
+#             report_group_id=row.report_group_id,
+#             report_group_name=row.report_group_name,
+#             report_group_logo=row.report_group_logo,
+#         )
+#         for row in rows
+#     ]
+
+
+def get_user_report_groups_grouped(
+    db: Session, user_id: int, org_id: int
+) -> List[SidebarReportGroupSetItemDTO]:
+    """
+    獲取用戶在特定組織下可訪問的所有 report_groups，按 report_group_set 分組
+    通過 user_report_group_set_accesses -> report_group_sets -> report_groups 連接
+    report_groups 按 report_group.order 排序
+    """
+    q = (
+        select(
+            ReportGroupSetEntity.id.label("report_group_set_id"),
+            ReportGroupEntity.id.label("report_group_id"),
+            ReportGroupEntity.name.label("report_group_name"),
+            ReportGroupEntity.order,
+            ReportGroupEntity.logo.label("report_group_logo"),
+        )
+        .select_from(UserReportGroupSetAccessEntity)
+        .join(
+            ReportGroupSetEntity,
+            ReportGroupSetEntity.id
+            == UserReportGroupSetAccessEntity.report_group_set_id,
+        )
+        .join(
+            ReportGroupEntity,
+            ReportGroupEntity.report_group_set_id == ReportGroupSetEntity.id,
+        )
+        .where(
+            and_(
+                UserReportGroupSetAccessEntity.user_id == user_id,
+                ReportGroupSetEntity.org_id == org_id,
+            )
+        )
+        .order_by(ReportGroupSetEntity.id, ReportGroupEntity.order)
+    )
+    rows = db.execute(q).all()
+
+    # Group by report_group_set_id
+    grouped: dict[int, List[SidebarReportGroupItemDTO]] = {}
+    for row in rows:
+        set_id = row.report_group_set_id
+        if set_id not in grouped:
+            grouped[set_id] = []
+        grouped[set_id].append(
+            SidebarReportGroupItemDTO(
+                report_group_id=row.report_group_id,
+                report_group_name=row.report_group_name,
+                report_group_logo=row.report_group_logo,
+            )
+        )
+
+    return [
+        SidebarReportGroupSetItemDTO(
+            report_groups_sets_id=set_id,
+            report_groups=report_groups,
+        )
+        for set_id, report_groups in grouped.items()
+    ]

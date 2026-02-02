@@ -17,7 +17,8 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   GCP_PROJECT_ID: adnex-product
   GCP_REGION: asia-east1
-  IMAGE: "gcr.io/$GCP_PROJECT_ID/$CI_PROJECT_NAME:$CI_COMMIT_SHA"
+  IMAGE_DEV: "gcr.io/$GCP_PROJECT_ID/$CI_PROJECT_NAME-dev:$CI_COMMIT_SHA"
+  IMAGE_PROD: "gcr.io/$GCP_PROJECT_ID/$CI_PROJECT_NAME:$CI_COMMIT_SHA"
   CLOUD_RUN_SERVICE: "adnex-bi-be"
   SERVICE_ACCOUNT: "giant-wang-kdanmobile-com@adnex-product.iam.gserviceaccount.com"
 
@@ -43,8 +44,14 @@ build:
   before_script: *before_gcloud_and_docker
   script:
     - docker version
-    - docker build -t "$IMAGE" .
-    - docker push "$IMAGE"
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "dev" ]; then
+        docker build -t "$IMAGE_DEV" .
+        docker push "$IMAGE_DEV"
+      else
+        docker build -t "$IMAGE_PROD" .
+        docker push "$IMAGE_PROD"
+      fi
   rules:
     # dev 分支一定跑
     - if: '$CI_COMMIT_BRANCH == "dev"'
@@ -57,12 +64,12 @@ migrate:
   needs: [build]
   before_script: *before_gcloud_and_docker
   script:
-    - docker pull "$IMAGE"
+    - docker pull "$IMAGE_DEV"
     - |
       docker run --rm \
         --entrypoint /bin/sh \
         -e DATABASE_URL="$DATABASE_URL" \
-        "$IMAGE" \
+        "$IMAGE_DEV" \
         -c 'echo ">>> Inside container DATABASE_URL = $DATABASE_URL"; alembic upgrade head'
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
@@ -77,7 +84,7 @@ deploy:dev:
     gcloud run deploy "${CLOUD_RUN_SERVICE}-dev" \
       --region "$GCP_REGION" \
       --platform managed \
-      --image "$IMAGE" \
+      --image "$IMAGE_DEV" \
       --service-account "$SERVICE_ACCOUNT" \
       --allow-unauthenticated \
       --quiet
@@ -95,7 +102,7 @@ deploy:
       gcloud run deploy "${CLOUD_RUN_SERVICE}" \
         --region "$GCP_REGION" \
         --platform managed \
-        --image "$IMAGE" \
+        --image "$IMAGE_PROD" \
         --service-account "$SERVICE_ACCOUNT" \
         --allow-unauthenticated \
         --quiet

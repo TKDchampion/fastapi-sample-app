@@ -1,12 +1,20 @@
+from typing import List
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, noload, selectinload
 from app.dtos.org_dto import OrgUpsertParamDTO
+from app.dtos.report_dto import BusinessModuleItemDTO
 from app.entities.organization_entity import OrganizationEntity
+from app.entities.business_module_entity import BusinessModuleEntity
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
+    org_business_modules,
 )
 from app.entities.role_entity import RoleEntity
 from app.entities.user_entity import UserEntity
+from app.entities.user_report_group_set_access_entity import (
+    UserReportGroupSetAccessEntity,
+)
+from app.entities.report_group_set_entity import ReportGroupSetEntity
 
 
 def get_orgs_by_sid(db: Session, si_id: int):
@@ -137,10 +145,24 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
             RoleEntity.id.label("role_id"),
             RoleEntity.name.label("role_name"),
             RoleEntity.description.label("role_desc"),
+            ReportGroupSetEntity.id.label("report_group_set_id"),
+            ReportGroupSetEntity.name.label("report_group_set_name"),
         )
         .select_from(UserEntity)
         .join(UR, UR.c.user_id == UserEntity.id)
         .outerjoin(RoleEntity, RoleEntity.id == UR.c.role_id)
+        .outerjoin(
+            UserReportGroupSetAccessEntity,
+            UserReportGroupSetAccessEntity.user_id == UserEntity.id,
+        )
+        .outerjoin(
+            ReportGroupSetEntity,
+            and_(
+                ReportGroupSetEntity.id
+                == UserReportGroupSetAccessEntity.report_group_set_id,
+                ReportGroupSetEntity.org_id == org_id,
+            ),
+        )
         .where(
             or_(
                 and_(UR.c.scope_type == "super", UR.c.scope_id == 0),
@@ -151,3 +173,21 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
     )
 
     return db.execute(stmt).all()
+
+
+def get_org_business_modules(db: Session, org_id: int) -> List[BusinessModuleItemDTO]:
+    """獲取組織的 business_modules"""
+    q = (
+        select(
+            BusinessModuleEntity.id,
+            BusinessModuleEntity.name,
+        )
+        .select_from(org_business_modules)
+        .join(
+            BusinessModuleEntity,
+            BusinessModuleEntity.id == org_business_modules.c.business_modules_id,
+        )
+        .where(org_business_modules.c.org_id == org_id)
+    )
+    rows = db.execute(q).all()
+    return [BusinessModuleItemDTO(id=row.id, name=row.name) for row in rows]
