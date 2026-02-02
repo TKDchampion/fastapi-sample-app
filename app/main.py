@@ -8,6 +8,7 @@ from app.routers import (
     si_router,
     user_router,
     permission_router,
+    report_router,
 )
 from starlette.middleware.cors import CORSMiddleware
 
@@ -65,16 +66,20 @@ app.add_middleware(
 
 Routers = [
     user_router.router,
+    user_router.si_router,
     auth_router.router,
     si_router.router,
     org_router.org_router,
     org_router.si_router,
     business_module_router.router,
+    business_module_router.google_sheet_router,
+    business_module_router.si_router,
     role_router.si_router,
     role_router.org_router,
     role_router.role_router,
     permission_router.si_router,
     permission_router.perm_router,
+    report_router.router,
 ]
 
 for r in Routers:

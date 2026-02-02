@@ -17,6 +17,8 @@ class OrganizationEntity(Base):
     logo: Mapped[str | None] = mapped_column(String, nullable=True)
     description: Mapped[str | None] = mapped_column(Text)
     disabled: Mapped[bool] = mapped_column(default=False, nullable=False)
+    table_location: Mapped[str | None] = mapped_column(String, nullable=True)
+    type: Mapped[str | None] = mapped_column(String, nullable=True)
     contract_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -53,4 +55,8 @@ class OrganizationEntity(Base):
     business_modules: Mapped[List["BusinessModuleEntity"]] = relationship(
         secondary="org_business_modules",
         back_populates="organizations",
+    )
+
+    report_group_sets: Mapped[list["ReportGroupSetEntity"]] = relationship(
+        "ReportGroupSetEntity", back_populates="org"
     )

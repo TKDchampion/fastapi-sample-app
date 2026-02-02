@@ -47,6 +47,11 @@ class UserAccessTreeResponseDTO(BaseModel):
     permissionTree: PermissionTreeDTO
 
 
+class ReportGroupSetItemDTO(BaseModel):
+    id: int
+    name: str
+
+
 class UserRolesResponseDTO(BaseModel):
     user_id: int
     name: str
@@ -54,3 +59,4 @@ class UserRolesResponseDTO(BaseModel):
     picture: str | None = None
     role_name: str
     role_id: Optional[int] = None
+    report_group_set: List[ReportGroupSetItemDTO] = []

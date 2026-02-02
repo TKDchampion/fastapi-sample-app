@@ -33,3 +33,7 @@ class UserEntity(Base):
         secondary=user_roles,
         back_populates="users",
     )
+
+    report_group_set_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = (
+        relationship("UserReportGroupSetAccessEntity", back_populates="user")
+    )
