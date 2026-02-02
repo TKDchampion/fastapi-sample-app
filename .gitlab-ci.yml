@@ -76,7 +76,7 @@ migrate:
       docker run --rm \
         --entrypoint /bin/sh \
         -e DATABASE_URL="$DATABASE_URL" \
-        "$IMAGE" \
+        "$IMAGE_DEV" \
         -c 'echo ">>> Inside container DATABASE_URL = $DATABASE_URL"; alembic upgrade head'
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
