@@ -68,5 +68,3 @@ def set_user_report_group_sets(
     return user_service.set_user_report_group_sets(
         db, si_id, org_id, user_id, group_set_ids, user_info
     )
-
-

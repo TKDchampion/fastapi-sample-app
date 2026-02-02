@@ -8,6 +8,7 @@ from app.domain.exception.domain_exception import DomainException
 def router_try():
     def decorator(func):
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 try:
@@ -30,6 +31,7 @@ def router_try():
 
             return async_wrapper
         else:
+
             @wraps(func)
             def wrapper(*args, **kwargs):
                 try:

@@ -34,4 +34,6 @@ class UserEntity(Base):
         back_populates="users",
     )
 
-    report_group_set_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = relationship("UserReportGroupSetAccessEntity", back_populates="user")
+    report_group_set_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = (
+        relationship("UserReportGroupSetAccessEntity", back_populates="user")
+    )

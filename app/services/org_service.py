@@ -156,7 +156,10 @@ def get_users_by_si_and_org(
 
         # 收集 report_group_set（避免重複）
         if user.report_group_set_id is not None:
-            rgs_entry = {"id": user.report_group_set_id, "name": user.report_group_set_name}
+            rgs_entry = {
+                "id": user.report_group_set_id,
+                "name": user.report_group_set_name,
+            }
             if rgs_entry not in user_map[user_id]["report_group_set"]:
                 user_map[user_id]["report_group_set"].append(rgs_entry)
 

@@ -11,7 +11,9 @@ from app.entities.associations_entity import (
 )
 from app.entities.role_entity import RoleEntity
 from app.entities.user_entity import UserEntity
-from app.entities.user_report_group_set_access_entity import UserReportGroupSetAccessEntity
+from app.entities.user_report_group_set_access_entity import (
+    UserReportGroupSetAccessEntity,
+)
 from app.entities.report_group_set_entity import ReportGroupSetEntity
 
 
@@ -151,14 +153,15 @@ def get_users_by_si_and_org(db: Session, si_id: int, org_id: int):
         .outerjoin(RoleEntity, RoleEntity.id == UR.c.role_id)
         .outerjoin(
             UserReportGroupSetAccessEntity,
-            UserReportGroupSetAccessEntity.user_id == UserEntity.id
+            UserReportGroupSetAccessEntity.user_id == UserEntity.id,
         )
         .outerjoin(
             ReportGroupSetEntity,
             and_(
-                ReportGroupSetEntity.id == UserReportGroupSetAccessEntity.report_group_set_id,
-                ReportGroupSetEntity.org_id == org_id
-            )
+                ReportGroupSetEntity.id
+                == UserReportGroupSetAccessEntity.report_group_set_id,
+                ReportGroupSetEntity.org_id == org_id,
+            ),
         )
         .where(
             or_(
