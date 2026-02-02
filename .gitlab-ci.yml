@@ -64,15 +64,8 @@ migrate:
   needs: [build]
   before_script: *before_gcloud_and_docker
   script:
+    - docker pull "$IMAGE_DEV"
     - |
-      if [ "$CI_COMMIT_BRANCH" = "dev" ]; then
-        IMAGE="$IMAGE_DEV"
-      else
-        IMAGE="$IMAGE_PROD"
-      fi
-
-      docker pull "$IMAGE"
-
       docker run --rm \
         --entrypoint /bin/sh \
         -e DATABASE_URL="$DATABASE_URL" \
@@ -80,7 +73,6 @@ migrate:
         -c 'echo ">>> Inside container DATABASE_URL = $DATABASE_URL"; alembic upgrade head'
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
 
 # ========== DEPLOY: DEV ==========
 deploy:dev:
@@ -101,7 +93,7 @@ deploy:dev:
 # ========== DEPLOY: PROD ==========
 deploy:
   stage: deploy
-  needs: [build, migrate]
+  needs: [build]
   before_script: *before_gcloud_and_docker
   script: |
     git fetch origin main
