@@ -35,13 +35,14 @@ def get_role_permissions(
     )
 
 
-@perm_router.get("/org", response_model=List[OrgPermissionDTO])
+@perm_router.get("/org/{org_id}", response_model=List[OrgPermissionDTO])
 @router_try()
 def list_org_permissions(
+    org_id: int,
     db: Session = Depends(get_db),
     user_info: UserReadDTO = Depends(token_required),
 ):
-    return permission_service.get_all_permissions_org(db)
+    return permission_service.get_all_permissions_org(db, org_id)
 
 
 @si_router.put(

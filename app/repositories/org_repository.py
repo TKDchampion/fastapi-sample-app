@@ -180,6 +180,7 @@ def get_org_business_modules(db: Session, org_id: int) -> List[BusinessModuleIte
     q = (
         select(
             BusinessModuleEntity.id,
+            BusinessModuleEntity.key,
             BusinessModuleEntity.name,
         )
         .select_from(org_business_modules)
@@ -190,4 +191,4 @@ def get_org_business_modules(db: Session, org_id: int) -> List[BusinessModuleIte
         .where(org_business_modules.c.org_id == org_id)
     )
     rows = db.execute(q).all()
-    return [BusinessModuleItemDTO(id=row.id, name=row.name) for row in rows]
+    return [BusinessModuleItemDTO(id=row.id, key=row.key, name=row.name) for row in rows]

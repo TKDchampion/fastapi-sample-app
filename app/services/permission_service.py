@@ -4,7 +4,7 @@ from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.domain.exception.domain_exception import DomainException
 from app.dtos.permission_dto import RolePermissionDTO, RolePermissionUpdateDTO
 from app.dtos.user_dto import UserReadDTO
-from app.repositories import permission_repository, role_repository
+from app.repositories import permission_repository, role_repository, org_repository
 from app.services.permission_guard_service import verify_user_permission
 
 
@@ -33,9 +33,27 @@ def get_role_permissions(
 
 
 @db_tx
-def get_all_permissions_org(db: Session):
+def get_all_permissions_org(db: Session, org_id: int):
     permissions = permission_repository.get_all_permissions_org(db)
-    return permissions
+
+    # 取得該組織的 business modules keys
+    org_business_modules = org_repository.get_org_business_modules(db, org_id)
+    org_business_keys = {bm.key for bm in org_business_modules}
+
+    result = []
+    for perm in permissions:
+        key = perm["key"]
+        # 如果 key 以 "business." 開頭，只有當對應的 business module key 存在於組織中才加入
+        if key.startswith("business."):
+            # 取得 "business." 後面的部分作為 business module key
+            business_key = key.split(".")[1] if len(key.split(".")) > 1 else None
+            if business_key and business_key in org_business_keys:
+                result.append(perm)
+        else:
+            # 非 business. 開頭的 permission 全部 return
+            result.append(perm)
+
+    return result
 
 
 @db_tx

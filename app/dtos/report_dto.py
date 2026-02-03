@@ -98,6 +98,7 @@ class SidebarReportGroupSetItemDTO(BaseModel):
 
 class BusinessModuleItemDTO(BaseModel):
     id: int
+    key: str
     name: str
 
 
