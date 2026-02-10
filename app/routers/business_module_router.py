@@ -71,7 +71,9 @@ async def get_insight_ads(
     """
     Get available ads list for insight analysis.
     """
-    return await business_module_service.get_org_insight_info(db, si_id, org_id)
+    return await business_module_service.get_org_insight_info(
+        db, user_info, si_id, org_id
+    )
 
 
 @si_router.post(
@@ -95,6 +97,6 @@ async def post_insight_analysis(
     - `{"type": "result", "message": "..."}`
     """
     stream = await business_module_service.post_org_insight_analysis_stream(
-        db, si_id, org_id, body
+        db, user_info, si_id, org_id, body
     )
     return StreamingResponse(stream, media_type="text/event-stream")
