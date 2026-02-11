@@ -135,7 +135,11 @@ def get_org_by_sid_oid(
     return org_service.get_org_by_sid_oid(db, si_id, org_id, user_info)
 
 
-@si_router.get("/{si_id}/org/{org_id}/sidebar", response_model=OrgSidebarResponseDTO)
+@si_router.get(
+    "/{si_id}/org/{org_id}/sidebar",
+    deprecated=True,
+    response_model=OrgSidebarResponseDTO,
+)
 @router_try()
 def get_org_sidebar(
     si_id: int,

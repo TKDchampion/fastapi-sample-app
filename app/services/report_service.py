@@ -119,13 +119,17 @@ def delete_report_group_set(
 
 @db_tx
 def get_report_groups(
-    db: Session, si_id: int, org_id: int, report_group_set_id: int, user: UserReadDTO
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    user: UserReadDTO,
 ) -> ReportGroupListResponseDTO:
     """Get all report groups for a report group set"""
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.view"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -137,12 +141,6 @@ def get_report_groups(
             status_code=404,
             detail={"type": "not_found", "msg": "Report group set not found"},
         )
-
-    has_access = report_repository.check_user_report_group_set_access(
-        db, user.id, report_group_set_id
-    )
-    if not has_access:
-        raise DomainException("No access to this report group set", "no_access", 403)
 
     groups = report_repository.get_report_groups_by_set_id(db, report_group_set_id)
     items = [ReportGroupItemDTO(**group_data) for group_data in groups]
@@ -361,12 +359,13 @@ def get_reports(
     report_group_set_id: int,
     report_group_id: int,
     user: UserReadDTO,
+    perm: str = "pass",
 ) -> ReportListResponseDTO:
     """Get all reports for a report group"""
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm=perm),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -379,15 +378,15 @@ def get_reports(
             detail={"type": "not_found", "msg": "Report group set not found"},
         )
 
-    report_group = report_repository.get_report_group_by_id(
-        db, report_group_id, report_group_set_id
-    )
-
-    if not report_group:
-        raise HTTPException(
-            status_code=404,
-            detail={"type": "not_found", "msg": "Report group not found"},
+    if perm == "pass":
+        report_group = report_repository.get_report_group_by_id(
+            db, report_group_id, report_group_set_id
         )
+        if not report_group:
+            raise HTTPException(
+                status_code=404,
+                detail={"type": "not_found", "msg": "Report group not found"},
+            )
 
     has_access = report_repository.check_user_report_group_set_access(
         db, user.id, report_group_set_id

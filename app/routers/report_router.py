@@ -104,7 +104,9 @@ def get_report_groups(
     user: UserReadDTO = Depends(token_required),
 ) -> ReportGroupListResponseDTO:
     """Get all report groups for a report group set"""
-    return report_service.get_report_groups(db, si_id, org_id, report_group_set_id, user)
+    return report_service.get_report_groups(
+        db, si_id, org_id, report_group_set_id, user
+    )
 
 
 @router.post(
@@ -142,7 +144,14 @@ def update_report_group(
 ) -> TextResponseDTO:
     """Update report group name and logo"""
     return report_service.update_report_group(
-        db, si_id, org_id, report_group_set_id, report_group_id, body.name, body.logo, user
+        db,
+        si_id,
+        org_id,
+        report_group_set_id,
+        report_group_id,
+        body.name,
+        body.logo,
+        user,
     )
 
 
@@ -199,7 +208,7 @@ def get_reports(
 ) -> ReportListResponseDTO:
     """Get all reports for a report group"""
     return report_service.get_reports(
-        db, si_id, org_id, report_group_set_id, report_group_id, user
+        db, si_id, org_id, report_group_set_id, report_group_id, user, "report.view"
     )
 
 
