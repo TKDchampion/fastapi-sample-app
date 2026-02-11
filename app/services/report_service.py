@@ -15,6 +15,7 @@ from app.dtos.report_dto import (
     ReportListResponseDTO,
     ReportBatchUpdateItemDTO,
 )
+from app.domain.exception.domain_exception import DomainException
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import report_repository
 from app.services.permission_guard_service import verify_user_permission
@@ -124,7 +125,7 @@ def get_report_groups(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.group.view"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -136,6 +137,12 @@ def get_report_groups(
             status_code=404,
             detail={"type": "not_found", "msg": "Report group set not found"},
         )
+
+    has_access = report_repository.check_user_report_group_set_access(
+        db, user.id, report_group_set_id
+    )
+    if not has_access:
+        raise DomainException("No access to this report group set", "no_access", 403)
 
     groups = report_repository.get_report_groups_by_set_id(db, report_group_set_id)
     items = [ReportGroupItemDTO(**group_data) for group_data in groups]
@@ -359,7 +366,7 @@ def get_reports(
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.view"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -381,6 +388,12 @@ def get_reports(
             status_code=404,
             detail={"type": "not_found", "msg": "Report group not found"},
         )
+
+    has_access = report_repository.check_user_report_group_set_access(
+        db, user.id, report_group_set_id
+    )
+    if not has_access:
+        raise DomainException("No access to this report group set", "no_access", 403)
 
     reports = report_repository.get_reports_by_group_id(db, report_group_id)
     items = [ReportItemDTO(**report_data) for report_data in reports]
