@@ -387,12 +387,13 @@ def get_reports(
                 status_code=404,
                 detail={"type": "not_found", "msg": "Report group not found"},
             )
-
-    has_access = report_repository.check_user_report_group_set_access(
-        db, user.id, report_group_set_id
-    )
-    if not has_access:
-        raise DomainException("No access to this report group set", "no_access", 403)
+        has_access = report_repository.check_user_report_group_set_access(
+            db, user.id, report_group_set_id
+        )
+        if not has_access:
+            raise DomainException(
+                "No access to this report group set", "no_access", 403
+            )
 
     reports = report_repository.get_reports_by_group_id(db, report_group_id)
     items = [ReportItemDTO(**report_data) for report_data in reports]
