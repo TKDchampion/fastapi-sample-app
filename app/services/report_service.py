@@ -15,6 +15,7 @@ from app.dtos.report_dto import (
     ReportListResponseDTO,
     ReportBatchUpdateItemDTO,
 )
+from app.domain.exception.domain_exception import DomainException
 from app.dtos.user_dto import UserReadDTO
 from app.repositories import report_repository
 from app.services.permission_guard_service import verify_user_permission
@@ -118,7 +119,11 @@ def delete_report_group_set(
 
 @db_tx
 def get_report_groups(
-    db: Session, si_id: int, org_id: int, report_group_set_id: int, user: UserReadDTO
+    db: Session,
+    si_id: int,
+    org_id: int,
+    report_group_set_id: int,
+    user: UserReadDTO,
 ) -> ReportGroupListResponseDTO:
     """Get all report groups for a report group set"""
     verify_user_permission(
@@ -354,12 +359,13 @@ def get_reports(
     report_group_set_id: int,
     report_group_id: int,
     user: UserReadDTO,
+    perm: str = "pass",
 ) -> ReportListResponseDTO:
     """Get all reports for a report group"""
     verify_user_permission(
         db,
         user,
-        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="report.view"),
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm=perm),
     )
 
     report_group_set = report_repository.get_report_group_set_by_id(
@@ -372,15 +378,22 @@ def get_reports(
             detail={"type": "not_found", "msg": "Report group set not found"},
         )
 
-    report_group = report_repository.get_report_group_by_id(
-        db, report_group_id, report_group_set_id
-    )
-
-    if not report_group:
-        raise HTTPException(
-            status_code=404,
-            detail={"type": "not_found", "msg": "Report group not found"},
+    if perm == "pass":
+        report_group = report_repository.get_report_group_by_id(
+            db, report_group_id, report_group_set_id
         )
+        if not report_group:
+            raise HTTPException(
+                status_code=404,
+                detail={"type": "not_found", "msg": "Report group not found"},
+            )
+        has_access = report_repository.check_user_report_group_set_access(
+            db, user.id, report_group_set_id
+        )
+        if not has_access:
+            raise DomainException(
+                "No access to this report group set", "no_access", 403
+            )
 
     reports = report_repository.get_reports_by_group_id(db, report_group_id)
     items = [ReportItemDTO(**report_data) for report_data in reports]

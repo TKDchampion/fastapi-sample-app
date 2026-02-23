@@ -364,50 +364,55 @@ def replace_user_report_group_set_accesses(
             db.add(access)
 
 
-# def get_user_report_groups(
-#     db: Session, user_id: int, org_id: int
-# ) -> List[UserReportGroupItemDTO]:
-#     """
-#     獲取用戶在特定組織下可訪問的所有 report_groups
-#     通過 user_report_group_set_accesses -> report_group_sets -> report_groups 連接
-#     按 report_group.order 排序
-#     """
-#     q = (
-#         select(
-#             ReportGroupSetEntity.id.label("report_group_set_id"),
-#             ReportGroupEntity.id.label("report_group_id"),
-#             ReportGroupEntity.name.label("report_group_name"),
-#             ReportGroupEntity.logo.label("report_group_logo"),
-#             ReportGroupEntity.order,
-#         )
-#         .select_from(UserReportGroupSetAccessEntity)
-#         .join(
-#             ReportGroupSetEntity,
-#             ReportGroupSetEntity.id
-#             == UserReportGroupSetAccessEntity.report_group_set_id,
-#         )
-#         .join(
-#             ReportGroupEntity,
-#             ReportGroupEntity.report_group_set_id == ReportGroupSetEntity.id,
-#         )
-#         .where(
-#             and_(
-#                 UserReportGroupSetAccessEntity.user_id == user_id,
-#                 ReportGroupSetEntity.org_id == org_id,
-#             )
-#         )
-#         .order_by(ReportGroupEntity.order)
-#     )
-#     rows = db.execute(q).all()
-#     return [
-#         UserReportGroupItemDTO(
-#             report_group_set_id=row.report_group_set_id,
-#             report_group_id=row.report_group_id,
-#             report_group_name=row.report_group_name,
-#             report_group_logo=row.report_group_logo,
-#         )
-#         for row in rows
-#     ]
+def get_user_business_permission_keys(
+    db: Session, user_id: int, si_id: int, org_id: int
+) -> set[str] | None:
+    """
+    獲取用戶在特定 org 下的 business permission keys
+    - Super user: 返回 None 表示有所有權限
+    - SI user: 返回 None 表示有所有權限
+    - Org user: 返回 business.{key} 中的 key 集合
+
+    返回：
+        set[str] 包含 business module keys（例如 "advertising", "retention"）
+        如果是 None 則表示有所有權限（super/si user）
+    """
+    # 先檢查是否為 super 或 si user
+    scope_check = db.execute(
+        select(user_roles_table.c.scope_type, user_roles_table.c.scope_id).where(
+            user_roles_table.c.user_id == user_id
+        )
+    ).all()
+
+    for row in scope_check:
+        if row.scope_type == "super":
+            return None  # Super user 有所有權限
+        if row.scope_type == "si" and row.scope_id == si_id:
+            return None  # SI user 對該 SI 下的 org 有所有權限
+
+    # Org user: 查詢 business 權限
+    q = (
+        select(PermissionEntity.key)
+        .select_from(user_roles_table)
+        .join(RoleEntity, RoleEntity.id == user_roles_table.c.role_id)
+        .join(role_permissions_table, role_permissions_table.c.role_id == RoleEntity.id)
+        .join(
+            PermissionEntity,
+            PermissionEntity.id == role_permissions_table.c.permission_id,
+        )
+        .where(
+            and_(
+                user_roles_table.c.user_id == user_id,
+                user_roles_table.c.scope_type == "org",
+                user_roles_table.c.scope_id == org_id,
+                PermissionEntity.key.like("business.%"),
+            )
+        )
+    )
+    rows = db.execute(q).all()
+
+    # 提取 "business." 後面的 key
+    return {row.key.split(".")[1] for row in rows if len(row.key.split(".")) > 1}
 
 
 def get_user_report_groups_grouped(

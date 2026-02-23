@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.entities.report_group_set_entity import ReportGroupSetEntity
 from app.entities.report_group_entity import ReportGroupEntity
 from app.entities.report_entity import ReportEntity
+from app.entities.user_report_group_set_access_entity import UserReportGroupSetAccessEntity
 
 
 def get_report_group_sets_by_org(db: Session, org_id: int):
@@ -59,6 +60,19 @@ def delete_report_group_set(db: Session, report_group_set_id: int) -> None:
     if report_group_set:
         db.delete(report_group_set)
         db.flush()
+
+
+def check_user_report_group_set_access(
+    db: Session, user_id: int, report_group_set_id: int
+) -> bool:
+    """檢查使用者是否有該 report_group_set 的存取權限"""
+    result = db.execute(
+        select(UserReportGroupSetAccessEntity.id).where(
+            UserReportGroupSetAccessEntity.user_id == user_id,
+            UserReportGroupSetAccessEntity.report_group_set_id == report_group_set_id,
+        )
+    ).scalar_one_or_none()
+    return result is not None
 
 
 def get_report_groups_by_set_id(db: Session, report_group_set_id: int):

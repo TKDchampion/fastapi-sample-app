@@ -60,3 +60,7 @@ class OrganizationEntity(Base):
     report_group_sets: Mapped[list["ReportGroupSetEntity"]] = relationship(
         "ReportGroupSetEntity", back_populates="org"
     )
+
+    alert_schedules: Mapped[list["AlertScheduleEntity"]] = relationship(
+        "AlertScheduleEntity", back_populates="organization"
+    )

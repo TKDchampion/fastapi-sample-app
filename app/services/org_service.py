@@ -182,6 +182,17 @@ def get_org_sidebar(
     )
     business_modules = org_repository.get_org_business_modules(db, org_id)
 
+    # 過濾 business_modules：只返回用戶有 business.{key} 權限的 modules
+    allowed_keys = user_repository.get_user_business_permission_keys(
+        db, current_user.id, si_id, org_id
+    )
+
+    # 如果 allowed_keys 是 None，表示是 super/si user，返回所有 modules
+    if allowed_keys is not None:
+        business_modules = [
+            module for module in business_modules if module.key in allowed_keys
+        ]
+
     return OrgSidebarResponseDTO(
         report_groups_sets=report_groups_sets,
         business_modules=business_modules,
