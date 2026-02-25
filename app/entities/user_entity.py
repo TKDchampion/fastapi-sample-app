@@ -41,3 +41,7 @@ class UserEntity(Base):
     alert_schedules: Mapped[list["AlertScheduleEntity"]] = relationship(
         "AlertScheduleEntity", back_populates="user"
     )
+
+    chatbot_conversations: Mapped[list["OrgUserChatbotEntity"]] = relationship(
+        "OrgUserChatbotEntity", back_populates="user"
+    )

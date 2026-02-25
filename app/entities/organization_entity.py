@@ -64,3 +64,10 @@ class OrganizationEntity(Base):
     alert_schedules: Mapped[list["AlertScheduleEntity"]] = relationship(
         "AlertScheduleEntity", back_populates="organization"
     )
+
+    chatbots: Mapped[list["ChatbotEntity"]] = relationship(
+        "ChatbotEntity", back_populates="organization"
+    )
+    chatbot_conversations: Mapped[list["OrgUserChatbotEntity"]] = relationship(
+        "OrgUserChatbotEntity", back_populates="organization"
+    )
