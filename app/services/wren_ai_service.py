@@ -8,6 +8,8 @@ from typing import AsyncIterator
 
 # from flask import json
 from sqlalchemy.orm import Session
+from app.domain.access_tree.check_user_access import PermissionCheckParams
+from app.dtos.user_dto import UserReadDTO
 from app.dtos.wren_ai_dto import (
     AskRequestDTO,
     ChartRequestDTO,
@@ -17,8 +19,10 @@ from app.dtos.wren_ai_dto import (
     RunSQLRequestDTO,
     RunSQLResponseDTO,
 )
+from app.domain.exception.domain_exception import DomainException
 from app.repositories import chatbot_repository
 from app.services.base_http_service import BaseHTTPService
+from app.services.permission_guard_service import verify_user_permission
 
 # from app.utils.validate_sqlstr import validate_sql
 
@@ -40,16 +44,27 @@ class WrenAiService(BaseHTTPService):
             timeout=6000,
         )
 
-    def _get_chatbot(self, db: Session, org_id: int):
+    def _verify_and_get_chatbot(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int
+    ):
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
         chatbot = chatbot_repository.get_chatbot_by_org_id(db, org_id)
         if not chatbot:
-            raise ValueError(f"No chatbot found for org_id={org_id}")
+            raise DomainException(
+                msg=f"No chatbot found for org_id={org_id}",
+                type="not_found",
+                code=404,
+            )
         return chatbot
 
     async def generate_sql(
-        self, endpoint: str, req: GenerateSQLRequestDTO, db: Session
+        self, endpoint: str, req: GenerateSQLRequestDTO, db: Session, user: UserReadDTO
     ) -> GenerateSQLResponseDTO:
-        chatbot = self._get_chatbot(db, req.org_id)
+        chatbot = self._verify_and_get_chatbot(db, user, req.si_id, req.org_id)
         payload = {
             "projectId": chatbot.wren_project_id,
             "question": req.question,
@@ -59,9 +74,9 @@ class WrenAiService(BaseHTTPService):
         return GenerateSQLResponseDTO(**data)
 
     async def run_sql(
-        self, endpoint: str, req: RunSQLRequestDTO, db: Session
+        self, endpoint: str, req: RunSQLRequestDTO, db: Session, user: UserReadDTO
     ) -> RunSQLResponseDTO:
-        chatbot = self._get_chatbot(db, req.org_id)
+        chatbot = self._verify_and_get_chatbot(db, user, req.si_id, req.org_id)
         payload = {
             "projectId": chatbot.wren_project_id,
             "sql": req.sql,
@@ -71,9 +86,10 @@ class WrenAiService(BaseHTTPService):
         return RunSQLResponseDTO(**data)
 
     async def ask(
-        self, endpoint: str, req: AskRequestDTO, db: Session
+        self, endpoint: str, req: AskRequestDTO, db: Session, user: UserReadDTO
     ) -> AsyncIterator[bytes]:
-        chatbot = self._get_chatbot(db, req.org_id)
+        # 驗證在 generator 外執行，確保錯誤在 response 開始前拋出
+        chatbot = self._verify_and_get_chatbot(db, user, req.si_id, req.org_id)
         payload = {
             "projectId": chatbot.wren_project_id,
             "question": req.question,
@@ -81,15 +97,24 @@ class WrenAiService(BaseHTTPService):
         }
         if req.threadId:
             payload["threadId"] = req.threadId
-        async for chunk in self.post_stream(
-            path=endpoint, payload=payload, token=chatbot.wren_key
-        ):
-            yield chunk
+
+        async def _stream() -> AsyncIterator[bytes]:
+            try:
+                async for chunk in self.post_stream(
+                    path=endpoint, payload=payload, token=chatbot.wren_key
+                ):
+                    yield chunk
+            except Exception:
+                # 這裡只處理串流中途錯誤
+                yield b"event: error\ndata: {}\n\n"
+                return
+
+        return _stream()
 
     async def run_chart(
-        self, endpoint: str, req: ChartRequestDTO, db: Session
+        self, endpoint: str, req: ChartRequestDTO, db: Session, user: UserReadDTO
     ) -> ChartResponseDTO:
-        chatbot = self._get_chatbot(db, req.org_id)
+        chatbot = self._verify_and_get_chatbot(db, user, req.si_id, req.org_id)
         payload = {
             "projectId": chatbot.wren_project_id,
             "question": req.question,

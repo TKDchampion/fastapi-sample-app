@@ -37,7 +37,7 @@ async def generate_sql_endpoint(
     Asks questions to the LLM and returns the generated SQL query through Wren AI service.
     """
     try:
-        return await service.generate_sql("generate_sql", request_dto, db)
+        return await service.generate_sql("generate_sql", request_dto, db, user_info)
     except httpx.HTTPStatusError as exc:
         # For the third-party service error response
         logger.error("HTTPStatusError calling generatesql: %s", exc, exc_info=True)
@@ -60,7 +60,7 @@ async def run_sql_endpoint(
     Runs a SQL query against the Wren database and returns the results.
     """
     try:
-        return await service.run_sql("run_sql", request_dto, db)
+        return await service.run_sql("run_sql", request_dto, db, user_info)
     except httpx.HTTPStatusError as exc:
         # For the third-party service error response
         logger.error("RequestError calling run_sql: %s", exc, exc_info=True)
@@ -92,30 +92,26 @@ async def ask_endpoint(
     Runs a SQL query against the Wren database and returns the results as a stream.
     """
     try:
-        # credits = user_info.credits
-        # if credits is not None and credits <= 0:
-        #     raise HTTPException(
-        #         status_code=403,
-        #         detail={"msg": "You have no credits left", "type": "no_credits"},
-        #     )
+        stream = await service.ask("stream/ask", request_dto, db, user_info)
         return StreamingResponse(
-            service.ask("stream/ask", request_dto, db),
+            stream,
             media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
         )
     except httpx.RequestError as exc:
         logger.error("RequestError calling stream/ask: %s", exc, exc_info=True)
         raise HTTPException(
-            status_code=exc.response.status_code,
-            detail={"type": "wren_ai", "msg": exc.response.text},
+            status_code=502,
+            detail={"type": "wren_ai", "msg": str(exc)},
         )
-    except HTTPException as e:
+    except HTTPException:
         raise
     except Exception as e:
         logger.error("Unexpected error: %s", e, exc_info=True)
-        raise HTTPException(
-            status_code=e.status_code,
-            detail={"type": "error", "msg": e.detail.get("msg", "Unknown error")},
-        )
+        raise
 
 
 @router.post("/chart", response_model=ChartResponseDTO)
@@ -129,7 +125,9 @@ async def run_chart_endpoint(
     Runs a SQL query and chart type against the Wren database and returns the chart data.
     """
     try:
-        return await service.run_chart("generate_vega_chart", request_dto, db)
+        return await service.run_chart(
+            "generate_vega_chart", request_dto, db, user_info
+        )
     except httpx.HTTPStatusError as exc:
         # For the third-party service error response
         logger.error("RequestError calling run_chart: %s", exc, exc_info=True)

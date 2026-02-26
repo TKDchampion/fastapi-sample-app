@@ -5,12 +5,14 @@ from pydantic import BaseModel, Field
 class AskRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
     threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
 
 
 class GenerateSQLRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
     threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
 
 
@@ -23,6 +25,7 @@ class GenerateSQLResponseDTO(BaseModel):
 class RunSQLRequestDTO(BaseModel):
     sql: str = Field(..., description="SQL query")
     threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
 
 
@@ -100,6 +103,7 @@ class ChartRequestDTO(BaseModel):
     )
     sql: str = Field(..., description="SQL query")
     threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
 
 
