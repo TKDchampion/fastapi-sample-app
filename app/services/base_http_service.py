@@ -1,6 +1,10 @@
+import asyncio
+import logging
 import os
 import httpx
 from typing import AsyncIterator, Optional, Dict, Any, Tuple
+
+logger = logging.getLogger(__name__)
 
 
 class BaseHTTPService:
@@ -77,6 +81,47 @@ class BaseHTTPService:
             response = await client.post(url, headers=headers, **request_kwargs)
             response.raise_for_status()
             return response.json()
+
+    async def post_stream(
+        self,
+        path: str,
+        payload: Dict[str, Any],
+        token: Optional[str] = None,
+        override_base_url: Optional[str] = None,
+    ) -> AsyncIterator[bytes]:
+        base = self.get_base_url(override_base_url)
+        url = f"{base.rstrip('/')}/{path.lstrip('/')}"
+
+        # url = f"{self.base_url}/{path}"
+        headers = {
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        }
+        if token:
+            headers["authorization"] = f"Bearer {token}"
+
+        try:
+            async with httpx.AsyncClient(timeout=None) as client:
+                async with client.stream(
+                    "POST", url, json=payload, headers=headers
+                ) as resp:
+                    resp.raise_for_status()
+                    async for chunk in resp.aiter_raw():
+                        yield chunk
+        except httpx.RemoteProtocolError:
+            # ✅ 第三方 SSE 先斷
+            logger.warning("UPSTREAM_SSE_DISCONNECTED")
+            return
+
+        except asyncio.CancelledError:
+            # ✅ 前端先斷（refresh / close tab）
+            logger.info("CLIENT_DISCONNECTED")
+            raise
+
+        except Exception:
+            # ✅ backend 自己炸
+            logger.exception("BACKEND_EXCEPTION")
+            raise
 
     async def get(
         self,

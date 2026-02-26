@@ -10,6 +10,7 @@ from app.routers import (
     permission_router,
     report_router,
     sidebar_router,
+    wren_ai_router,
 )
 from starlette.middleware.cors import CORSMiddleware
 
@@ -82,6 +83,7 @@ Routers = [
     permission_router.perm_router,
     report_router.router,
     sidebar_router.router,
+    wren_ai_router.router,
 ]
 
 for r in Routers:
