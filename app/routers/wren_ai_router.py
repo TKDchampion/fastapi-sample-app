@@ -140,34 +140,34 @@ async def run_chart_endpoint(
         raise
 
 
-# @router.post(
-#     "/download_table",
-#     response_class=Response,
-#     responses={
-#         200: {
-#             "content": {
-#                 "application/json": {
-#                     "schema": QueryTableMessageResponseDTO.model_json_schema()
-#                 },
-#                 "text/csv": {"schema": {"type": "string", "format": "binary"}},
-#             },
-#             "description": "Returns a CSV file if the row count is below limit, otherwise a JSON message.",
-#         }
-#     },
-# )
-# async def download_table_endpoint(
-#     request_dto: QueryTablesRequestDTO,
-#     service: WrenAiService = Depends(WrenAiService),
-#     user_info: UserReadDTO = Depends(token_required),
-# ):
-#     """
-#     Downloads table data based on a SQL query from Google BigQuery.
-#     """
-#     try:
-#         return await service.download_table(request_dto.query)
+@router.post(
+    "/download_table",
+    response_class=Response,
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "schema": QueryTableMessageResponseDTO.model_json_schema()
+                },
+                "text/csv": {"schema": {"type": "string", "format": "binary"}},
+            },
+            "description": "Returns a CSV file if the row count is below limit, otherwise a JSON message.",
+        }
+    },
+)
+async def download_table_endpoint(
+    request_dto: QueryTablesRequestDTO,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+):
+    """
+    Downloads table data based on a SQL query from Google BigQuery.
+    """
+    try:
+        return await service.download_table(request_dto.query)
 
-#     except HTTPException as e:
-#         raise
-#     except Exception as e:
-#         logger.error("Error in download_table_endpoint: %s", e, exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal Server Error")
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        logger.error("Error in download_table_endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

@@ -1,12 +1,13 @@
-# import csv
+import csv
 
-# import os
-# import tempfile
+import os
+import tempfile
 from typing import AsyncIterator
 
-# from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
-# from flask import json
+from app.utils.validate_sqlstr import validate_sql
+import json
 from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.dtos.user_dto import UserReadDTO
@@ -24,15 +25,13 @@ from app.repositories import chatbot_repository
 from app.services.base_http_service import BaseHTTPService
 from app.services.permission_guard_service import verify_user_permission
 
-# from app.utils.validate_sqlstr import validate_sql
+from google.cloud import bigquery
+import base64
 
-# from google.cloud import bigquery
-# import base64
-
-# raw = os.environ["BQ_SERVICE_ACCOUNT_KEY"]
-# decoded = base64.b64decode(raw).decode("utf-8")
-# info = json.loads(decoded)
-# client = bigquery.Client.from_service_account_info(info)
+raw = os.environ["BQ_SERVICE_ACCOUNT_KEY"]
+decoded = base64.b64decode(raw).decode("utf-8")
+info = json.loads(decoded)
+client = bigquery.Client.from_service_account_info(info)
 
 
 class WrenAiService(BaseHTTPService):
@@ -125,30 +124,30 @@ class WrenAiService(BaseHTTPService):
         data = await self.post(path=endpoint, payload=payload, token=chatbot.wren_key)
         return ChartResponseDTO(**data)
 
-    # async def download_table(self, query: str):
-    #     count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"
-    #     count_result = client.query(count_query).result()
-    #     total_rows = list(count_result)[0].total_rows
-    #     limit = 10000
-    #     if total_rows > limit:
-    #         return JSONResponse(
-    #             content={
-    #                 "message": "The query returns too many rows to download (limit: 10,000).",
-    #                 "total_rows": total_rows,
-    #             },
-    #             status_code=200,
-    #         )
+    async def download_table(self, query: str):
+        count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"
+        count_result = client.query(count_query).result()
+        total_rows = list(count_result)[0].total_rows
+        limit = 10000
+        if total_rows > limit:
+            return JSONResponse(
+                content={
+                    "message": "The query returns too many rows to download (limit: 10,000).",
+                    "total_rows": total_rows,
+                },
+                status_code=200,
+            )
 
-    #     validate_query = validate_sql(query, limit)
-    #     result = client.query(validate_query).result()
+        validate_query = validate_sql(query, limit)
+        result = client.query(validate_query).result()
 
-    #     with tempfile.NamedTemporaryFile(
-    #         delete=False, suffix=".csv", mode="w", newline="", encoding="utf-8"
-    #     ) as tmpfile:
-    #         writer = csv.writer(tmpfile)
-    #         writer.writerow([field.name for field in result.schema])
-    #         for row in result:
-    #             writer.writerow(list(row.values()))
-    #         tmpfile_path = tmpfile.name
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=".csv", mode="w", newline="", encoding="utf-8"
+        ) as tmpfile:
+            writer = csv.writer(tmpfile)
+            writer.writerow([field.name for field in result.schema])
+            for row in result:
+                writer.writerow(list(row.values()))
+            tmpfile_path = tmpfile.name
 
-    #     return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
+        return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
