@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, URL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -6,26 +6,45 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-url = os.getenv("DATABASE_URL")
-if not url:
+_raw_url = os.getenv("DATABASE_URL")
+if _raw_url:
+    DATABASE_URL = _raw_url
+    _using_unix_socket = False
+else:
     DB_HOST = os.getenv("DB_HOST")
     DB_PORT = os.getenv("DB_PORT")
     DB_NAME = os.getenv("DB_NAME")
     DB_USER = os.getenv("DB_USER")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
-    if DB_PORT:
-        # TCP 連線（含 port）
-        url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    else:
-        # Unix socket 連線（Cloud SQL，無 port）
-        url = f"postgresql://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_HOST}"
 
-DATABASE_URL = url
+    if not all([DB_HOST, DB_NAME, DB_USER, DB_PASSWORD]):
+        raise ValueError("ERROR: DATABASE_URL not setting, pls checking .env file！")
+
+    _using_unix_socket = not DB_PORT
+    if _using_unix_socket:
+        # Cloud SQL Unix socket 連線：host 作為 query 參數傳入
+        DATABASE_URL = URL.create(
+            drivername="postgresql",
+            username=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            query={"host": DB_HOST},
+        )
+    else:
+        # TCP 連線
+        DATABASE_URL = URL.create(
+            drivername="postgresql",
+            username=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=int(DB_PORT),
+            database=DB_NAME,
+        )
+
 if not DATABASE_URL:
-    raise ValueError("ERROR:  DATABASE_URL not setting,pls checking .env file！")
+    raise ValueError("ERROR: DATABASE_URL not setting, pls checking .env file！")
 
 # Unix socket 連線不支援 TCP keepalives 參數
-_using_unix_socket = DATABASE_URL.startswith("postgresql://") and "?host=/" in DATABASE_URL
 _connect_args = (
     {}
     if _using_unix_socket
