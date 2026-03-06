@@ -1,8 +1,10 @@
 import csv
-
+import logging
 import os
 import tempfile
 from typing import AsyncIterator
+
+logger = logging.getLogger(__name__)
 
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -103,8 +105,9 @@ class WrenAiService(BaseHTTPService):
                     path=endpoint, payload=payload, token=chatbot.wren_key
                 ):
                     yield chunk
-            except Exception:
+            except Exception as e:
                 # 這裡只處理串流中途錯誤
+                logger.exception("ASK_STREAM_ERROR: %s", e)
                 yield b"event: error\ndata: {}\n\n"
                 return
 
