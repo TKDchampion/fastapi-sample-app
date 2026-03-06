@@ -11,7 +11,8 @@ from app.entities import UserEntity
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+_db_url = DATABASE_URL.render_as_string(hide_password=False) if hasattr(DATABASE_URL, "render_as_string") else str(DATABASE_URL)
+config.set_main_option("sqlalchemy.url", _db_url)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
