@@ -35,6 +35,3 @@ class AlertScheduleEntity(Base):
     organization: Mapped["OrganizationEntity"] = relationship(
         "OrganizationEntity", back_populates="alert_schedules"
     )
-    user: Mapped["UserEntity"] = relationship(
-        "UserEntity", back_populates="alert_schedules"
-    )
