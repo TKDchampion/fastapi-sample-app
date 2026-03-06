@@ -12,14 +12,12 @@ class AlertScheduleEntity(Base):
     org_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("organizations.id"), nullable=False
     )
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
-    )
-    schedule_name: Mapped[str] = mapped_column(String, nullable=False)
-    is_normal: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    send_schedule: Mapped[str] = mapped_column(String, nullable=False)
-    interval: Mapped[str | None] = mapped_column(String)
-    ads_str: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    schedule_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_recurring: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    send_schedule: Mapped[str] = mapped_column(String(255), nullable=False)
+    interval: Mapped[str | None] = mapped_column(String(255))
+    ads_str: Mapped[str] = mapped_column(String(255), nullable=False)
     send_email: Mapped[str] = mapped_column(String, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
