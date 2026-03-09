@@ -1,8 +1,11 @@
 import asyncio
+import logging
 from functools import wraps
 from fastapi import HTTPException
 
 from app.domain.exception.domain_exception import DomainException
+
+logger = logging.getLogger(__name__)
 
 
 def router_try():
@@ -24,6 +27,7 @@ def router_try():
                     )
 
                 except Exception as e:
+                    logger.error("Unhandled exception in %s: %s", func.__name__, e, exc_info=True)
                     raise HTTPException(
                         status_code=500,
                         detail={"type": "error", "msg": "Unknown error"},
@@ -47,7 +51,7 @@ def router_try():
                     )
 
                 except Exception as e:
-                    # 統一輸出 500
+                    logger.error("Unhandled exception in %s: %s", func.__name__, e, exc_info=True)
                     raise HTTPException(
                         status_code=500,
                         detail={"type": "error", "msg": "Unknown error"},
