@@ -43,9 +43,3 @@ class DeleteAlertRequestDTO(BaseModel):
 class DeleteAlertResponseDTO(BaseModel):
     delete_count: int
     message: str
-
-
-class TriggerAlertResponseDTO(BaseModel):
-    send_count: int
-    data: list[dict[str, Any]]
-    message: str

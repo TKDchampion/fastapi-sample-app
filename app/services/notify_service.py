@@ -6,7 +6,6 @@ from app.dtos.notify_dto import (
     CreateAlertRequestDTO,
     CreateAlertResponseDTO,
     DeleteAlertResponseDTO,
-    TriggerAlertResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services.base_http_service import BaseHTTPService
@@ -32,7 +31,14 @@ class NotifyService(BaseHTTPService):
 
     @external_api("notify_api")
     async def get_alert_info(
-        self, org_id: int, limit: int, page: int, token: str, db: Session, user: UserReadDTO, si_id: int
+        self,
+        org_id: int,
+        limit: int,
+        page: int,
+        token: str,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
     ) -> AlertInfoResponseDTO:
         self._verify_notify_permission(db, user, si_id, org_id)
         data = await self.get(
@@ -44,7 +50,13 @@ class NotifyService(BaseHTTPService):
 
     @external_api("notify_api")
     async def create_alert(
-        self, org_id: int, body: CreateAlertRequestDTO, token: str, db: Session, user: UserReadDTO, si_id: int
+        self,
+        org_id: int,
+        body: CreateAlertRequestDTO,
+        token: str,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
     ) -> CreateAlertResponseDTO:
         self._verify_notify_permission(db, user, si_id, org_id)
         data = await self.post(
@@ -56,7 +68,13 @@ class NotifyService(BaseHTTPService):
 
     @external_api("notify_api")
     async def delete_alert(
-        self, org_id: int, alert_id: int, token: str, db: Session, user: UserReadDTO, si_id: int
+        self,
+        org_id: int,
+        alert_id: int,
+        token: str,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
     ) -> DeleteAlertResponseDTO:
         self._verify_notify_permission(db, user, si_id, org_id)
         data = await self.delete(
@@ -65,18 +83,6 @@ class NotifyService(BaseHTTPService):
             token=token,
         )
         return DeleteAlertResponseDTO(**data)
-
-    @external_api("notify_api")
-    async def trigger_alert(
-        self, token: str, db: Session, user: UserReadDTO, si_id: int, org_id: int
-    ) -> TriggerAlertResponseDTO:
-        self._verify_notify_permission(db, user, si_id, org_id)
-        data = await self.post(
-            path="schedule/job/alert/start",
-            payload={},
-            token=token,
-        )
-        return TriggerAlertResponseDTO(**data)
 
 
 notify_service = NotifyService()

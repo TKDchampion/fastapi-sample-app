@@ -7,7 +7,6 @@ from app.dtos.notify_dto import (
     CreateAlertRequestDTO,
     CreateAlertResponseDTO,
     DeleteAlertResponseDTO,
-    TriggerAlertResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services.jwt_service import token_required
@@ -32,7 +31,9 @@ async def get_alert_info(
 ) -> AlertInfoResponseDTO:
     """Get alert info list for an organization"""
     token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-    return await notify_service.get_alert_info(org_id, limit, page, token, db, user, si_id)
+    return await notify_service.get_alert_info(
+        org_id, limit, page, token, db, user, si_id
+    )
 
 
 @router.post(
@@ -69,20 +70,3 @@ async def delete_alert(
     """Delete an alert schedule for an organization"""
     token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     return await notify_service.delete_alert(org_id, alert_id, token, db, user, si_id)
-
-
-@router.post(
-    "/si/{si_id}/org/{org_id}/schedule/job/alert/start",
-    response_model=TriggerAlertResponseDTO,
-)
-@router_try()
-async def trigger_alert(
-    si_id: int,
-    org_id: int,
-    request: Request,
-    user: UserReadDTO = Depends(token_required),
-    db: Session = Depends(get_db),
-) -> TriggerAlertResponseDTO:
-    """Trigger all scheduled alerts"""
-    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-    return await notify_service.trigger_alert(token, db, user, si_id, org_id)
