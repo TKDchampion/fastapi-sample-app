@@ -1,16 +1,16 @@
 from datetime import datetime
 from typing import Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AlertInfoItemDTO(BaseModel):
     id: int
     schedule_name: str
     send_schedule: str
-    type: str
+    is_recurring: bool
     send_email: str
     created_at: datetime
-    status: str
+    status: int = Field(..., description="Alert狀態, 0:排程中, 1:已完成", examples=[0])
 
 
 class AlertInfoResponseDTO(BaseModel):
