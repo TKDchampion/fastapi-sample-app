@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from functools import wraps
 from typing import Optional
 
 import httpx
 
 from app.domain.exception.domain_exception import DomainException
+
+logger = logging.getLogger(__name__)
 
 
 def external_api(error_type: str, default_msg: Optional[str] = None):
@@ -37,18 +40,27 @@ def external_api(error_type: str, default_msg: Optional[str] = None):
                 except DomainException:
                     raise
                 except httpx.HTTPStatusError as e:
+                    logger.error(
+                        "%s HTTPStatusError [%s]: %s",
+                        error_type,
+                        e.response.status_code,
+                        e.response.text,
+                        exc_info=True,
+                    )
                     raise DomainException(
-                        msg=f"{msg_prefix} error: {e.response.status_code}",
+                        msg=e.response.text,
                         type=error_type,
                         code=e.response.status_code,
                     )
                 except httpx.RequestError as e:
+                    logger.error("%s RequestError: %s", error_type, e, exc_info=True)
                     raise DomainException(
                         msg=f"{msg_prefix} request failed: {str(e)}",
                         type=error_type,
                         code=500,
                     )
                 except Exception as e:
+                    logger.error("%s unexpected error: %s", error_type, e, exc_info=True)
                     raise DomainException(
                         msg=f"{msg_prefix} unexpected error: {str(e)}",
                         type=error_type,
@@ -64,18 +76,27 @@ def external_api(error_type: str, default_msg: Optional[str] = None):
                 except DomainException:
                     raise
                 except httpx.HTTPStatusError as e:
+                    logger.error(
+                        "%s HTTPStatusError [%s]: %s",
+                        error_type,
+                        e.response.status_code,
+                        e.response.text,
+                        exc_info=True,
+                    )
                     raise DomainException(
-                        msg=f"{msg_prefix} error: {e.response.status_code}",
+                        msg=e.response.text,
                         type=error_type,
                         code=e.response.status_code,
                     )
                 except httpx.RequestError as e:
+                    logger.error("%s RequestError: %s", error_type, e, exc_info=True)
                     raise DomainException(
                         msg=f"{msg_prefix} request failed: {str(e)}",
                         type=error_type,
                         code=500,
                     )
                 except Exception as e:
+                    logger.error("%s unexpected error: %s", error_type, e, exc_info=True)
                     raise DomainException(
                         msg=f"{msg_prefix} unexpected error: {str(e)}",
                         type=error_type,

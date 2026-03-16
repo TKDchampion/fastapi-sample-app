@@ -139,3 +139,22 @@ class BaseHTTPService:
             response = await client.get(url, params=params, headers=headers)
             response.raise_for_status()
             return response.json()
+
+    async def delete(
+        self,
+        path: str,
+        payload: Dict[str, Any],
+        token: Optional[str] = None,
+        override_base_url: Optional[str] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        base = self.get_base_url(override_base_url)
+        url = f"{base.rstrip('/')}/{path.lstrip('/')}"
+        headers = self.build_headers(token, extra_headers)
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.request(
+                "DELETE", url, json=payload, headers=headers
+            )
+            response.raise_for_status()
+            return response.json()

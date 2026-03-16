@@ -3,6 +3,7 @@ from fastapi.openapi.utils import get_openapi
 from app.routers import (
     auth_router,
     business_module_router,
+    notify_router,
     org_router,
     role_router,
     si_router,
@@ -84,6 +85,7 @@ Routers = [
     report_router.router,
     sidebar_router.router,
     wren_ai_router.router,
+    notify_router.router,
 ]
 
 for r in Routers:
