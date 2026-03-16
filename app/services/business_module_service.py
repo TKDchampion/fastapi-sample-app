@@ -47,7 +47,7 @@ async def get_org_insight_info(
     if not org.table_location or not org.type:
         raise DomainException(
             msg="Organization missing table_location or type configuration",
-            type="invalid_config",
+            type="ads_mapping_missing",
             code=400,
         )
     return await insight_service.get_insight_info(
@@ -91,7 +91,7 @@ async def post_org_insight_analysis_stream(
     if not org.table_location or not org.type:
         raise DomainException(
             msg="Organization missing table_location or type configuration",
-            type="invalid_config",
+            type="ads_mapping_missing",
             code=400,
         )
 
