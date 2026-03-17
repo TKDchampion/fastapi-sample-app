@@ -56,9 +56,9 @@ class WrenAiService(BaseHTTPService):
         chatbot = chatbot_repository.get_chatbot_by_org_id(db, org_id)
         if not chatbot:
             raise DomainException(
-                msg=f"No chatbot found for org_id={org_id}",
-                type="not_found",
-                code=404,
+                msg="Organization missing chatbot configuration",
+                type="chatbot_mapping_missing",
+                code=400,
             )
         return chatbot
 
