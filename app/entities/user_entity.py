@@ -37,7 +37,3 @@ class UserEntity(Base):
     report_group_set_accesses: Mapped[list["UserReportGroupSetAccessEntity"]] = (
         relationship("UserReportGroupSetAccessEntity", back_populates="user")
     )
-
-    chatbot_conversations: Mapped[list["OrgUserChatbotEntity"]] = relationship(
-        "OrgUserChatbotEntity", back_populates="user"
-    )

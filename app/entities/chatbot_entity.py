@@ -27,13 +27,8 @@ class ChatbotEntity(Base):
         server_default=func.now(),
     )
 
-    __table_args__ = (
-        Index("ix_chatbots_org_id", "org_id"),
-    )
+    __table_args__ = (Index("ix_chatbots_org_id", "org_id"),)
 
     organization: Mapped["OrganizationEntity"] = relationship(
         "OrganizationEntity", back_populates="chatbots"
-    )
-    conversations: Mapped[list["OrgUserChatbotEntity"]] = relationship(
-        "OrgUserChatbotEntity", back_populates="chatbot"
     )

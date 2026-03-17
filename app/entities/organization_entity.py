@@ -68,6 +68,3 @@ class OrganizationEntity(Base):
     chatbots: Mapped[list["ChatbotEntity"]] = relationship(
         "ChatbotEntity", back_populates="organization"
     )
-    chatbot_conversations: Mapped[list["OrgUserChatbotEntity"]] = relationship(
-        "OrgUserChatbotEntity", back_populates="organization"
-    )

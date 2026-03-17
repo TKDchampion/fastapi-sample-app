@@ -10,5 +10,4 @@ from .report_entity import ReportEntity
 from .user_report_group_set_access_entity import UserReportGroupSetAccessEntity
 from .alert_schedule_entity import AlertScheduleEntity
 from .chatbot_entity import ChatbotEntity
-from .org_user_chatbot_entity import OrgUserChatbotEntity
 from . import associations_entity
