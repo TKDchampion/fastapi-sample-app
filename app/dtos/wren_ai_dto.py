@@ -1,12 +1,39 @@
 from typing import Any, List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class CreateMessageDTO(BaseModel):
+    role: Literal["user", "system", "assistant", "tool"] = Field("user", description="Message role")
+    content_type: Literal["text", "markdown", "json", "tool_call", "tool_result", "image_ref", "error"] = Field("text", description="Content type")
+    content_text: Optional[str] = Field(None, description="Text content")
+    content_json: Optional[dict] = Field(None, description="JSON content")
+    status: Literal["final", "streaming", "failed", "cancelled"] = Field("final", description="Message status")
+    parent_message_id: Optional[str] = Field(None, description="Parent message ID (UUID)")
 
 
 class AskRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
-    threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(None, description="Wren thread ID for the request")
+    thread_id: Optional[str] = Field(None, description="System thread ID (returned after first ask)")
+    title: Optional[str] = Field(None, description="Thread title, required when creating a new conversation")
     si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
+
+    @model_validator(mode="after")
+    def validate_thread_and_title(self):
+        has_wren = self.wren_ai_thread_id is not None
+        has_thread = self.thread_id is not None
+
+        if not has_wren and not has_thread:
+            # 新增情境：title 必填
+            if not self.title:
+                raise ValueError("title is required when creating a new conversation (wren_ai_thread_id and thread_id are both absent)")
+        else:
+            # 繼續情境：wren_ai_thread_id 和 thread_id 必須同時填
+            if not has_wren or not has_thread:
+                raise ValueError("wren_ai_thread_id and thread_id must both be provided together")
+
+        return self
 
 
 class GenerateSQLRequestDTO(BaseModel):

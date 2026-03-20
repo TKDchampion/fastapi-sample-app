@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import tempfile
+import uuid
 from typing import AsyncIterator
 
 logger = logging.getLogger(__name__)
@@ -20,13 +21,15 @@ from app.dtos.wren_ai_dto import (
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
+    CreateMessageDTO,
     GenerateSQLRequestDTO,
     GenerateSQLResponseDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
 )
 from app.domain.exception.domain_exception import DomainException
-from app.repositories import chatbot_repository
+from app.entities.message_entity import MessageContentType, MessageRole, MessageStatus
+from app.repositories import chatbot_repository, message_repository, thread_repository
 from app.services.base_http_service import BaseHTTPService
 from app.services.permission_guard_service import verify_user_permission
 
@@ -96,6 +99,80 @@ class WrenAiService(BaseHTTPService):
         data = await self.post(path=endpoint, payload=payload, token=chatbot.wren_key)
         return RunSQLResponseDTO(**data)
 
+    def _extract_stream_as_json(self, buffer: bytes) -> list:
+        events = []
+        for line in buffer.split(b"\n"):
+            if not line.startswith(b"data:"):
+                continue
+            try:
+                data = json.loads(line[5:].strip())
+                events.append(data)
+            except Exception:
+                pass
+        return events
+
+    def create_messages(
+        self,
+        db: Session,
+        thread_id: uuid.UUID,
+        user_msg: CreateMessageDTO,
+        system_content_json: list,
+    ) -> None:
+        parent_id = (
+            uuid.UUID(user_msg.parent_message_id)
+            if user_msg.parent_message_id
+            else None
+        )
+        next_seq = message_repository.get_next_seq(db, thread_id)
+
+        user_message = message_repository.create_message(
+            db=db,
+            thread_id=thread_id,
+            seq=next_seq,
+            role=MessageRole.user,
+            content_type=MessageContentType.text,
+            content_text=user_msg.content_text,
+            content_json=None,
+            status=MessageStatus.final,
+            parent_message_id=parent_id,
+        )
+        message_repository.create_message(
+            db=db,
+            thread_id=thread_id,
+            seq=next_seq + 1,
+            role=MessageRole.system,
+            content_type=MessageContentType.json,
+            content_text=None,
+            content_json=system_content_json,
+            status=MessageStatus.final,
+            parent_message_id=user_message.id,
+        )
+        db.commit()
+        thread_repository.update_thread_stats(db, thread_id, message_count_increment=2)
+
+    def _create_thread_from_chunk(
+        self, buffer: bytes, db: Session, user: UserReadDTO, chatbot, req: AskRequestDTO
+    ):
+        for line in buffer.split(b"\n"):
+            if not line.startswith(b"data:"):
+                continue
+            try:
+                data = json.loads(line[5:].strip())
+                if data.get("type") == "message_stop":
+                    wren_thread_id = data.get("data", {}).get("threadId")
+                    if wren_thread_id:
+                        return thread_repository.create_thread(
+                            db=db,
+                            wren_thread_id=wren_thread_id,
+                            org_id=req.org_id,
+                            user_id=user.id,
+                            chatbot_id=chatbot.id,
+                            title=req.title,
+                        )
+            except Exception:
+                pass
+        return None
+
     async def ask(
         self, endpoint: str, req: AskRequestDTO, db: Session, user: UserReadDTO
     ) -> AsyncIterator[bytes]:
@@ -106,20 +183,56 @@ class WrenAiService(BaseHTTPService):
             "question": req.question,
             "returnBothSqlDialect": True,
         }
-        if req.threadId:
-            payload["threadId"] = req.threadId
+        if req.wren_ai_thread_id:
+            payload["threadId"] = req.wren_ai_thread_id
+
+        is_new_thread = req.thread_id is None
 
         async def _stream() -> AsyncIterator[bytes]:
+            buffer = b""
+            thread_created = False
+            thread = None
             try:
                 async for chunk in self.post_stream(
                     path=endpoint, payload=payload, token=chatbot.wren_key
                 ):
                     yield chunk
+                    buffer += chunk
+                    if is_new_thread and not thread_created:
+                        thread = self._create_thread_from_chunk(
+                            buffer, db, user, chatbot, req
+                        )
+                        if thread:
+                            thread_created = True
+                            system_thread_id = str(thread.id)
+                            yield (
+                                f'data: {{"type": "thread_created", "data": {{"system_thread_id": "{system_thread_id}"}}}}\n\n'
+                            ).encode()
             except Exception as e:
                 # 這裡只處理串流中途錯誤
                 logger.exception("ASK_STREAM_ERROR: %s", e)
                 yield b"event: error\ndata: {}\n\n"
                 return
+
+            try:
+                thread_id = (
+                    thread.id
+                    if thread
+                    else (uuid.UUID(req.thread_id) if req.thread_id else None)
+                )
+                if thread_id:
+                    stream_json = self._extract_stream_as_json(buffer)
+                    user_msg = CreateMessageDTO(
+                        role="user",
+                        content_type="text",
+                        content_text=req.question,
+                        content_json=None,
+                        status="final",
+                        parent_message_id=None,
+                    )
+                    self.create_messages(db, thread_id, user_msg, stream_json)
+            except Exception as e:
+                logger.exception("CREATE_MESSAGES_ERROR: %s", e)
 
         return _stream()
 
