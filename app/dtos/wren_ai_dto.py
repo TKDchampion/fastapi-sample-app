@@ -114,3 +114,8 @@ class QueryTablesRequestDTO(BaseModel):
 class QueryTableMessageResponseDTO(BaseModel):
     message: str
     total_rows: int
+
+
+class ChatbotReadDTO(BaseModel):
+    id: int
+    name: str

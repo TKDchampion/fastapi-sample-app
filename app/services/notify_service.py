@@ -12,6 +12,7 @@ from app.services.base_http_service import BaseHTTPService
 from app.services.permission_guard_service import verify_user_permission
 
 
+@external_api("notify_api")
 class NotifyService(BaseHTTPService):
 
     def __init__(self):
@@ -29,7 +30,6 @@ class NotifyService(BaseHTTPService):
             PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.notify"),
         )
 
-    @external_api("notify_api")
     async def get_alert_info(
         self,
         org_id: int,
@@ -48,7 +48,6 @@ class NotifyService(BaseHTTPService):
         )
         return AlertInfoResponseDTO(**data)
 
-    @external_api("notify_api")
     async def create_alert(
         self,
         org_id: int,
@@ -66,7 +65,6 @@ class NotifyService(BaseHTTPService):
         )
         return CreateAlertResponseDTO(**data)
 
-    @external_api("notify_api")
     async def delete_alert(
         self,
         org_id: int,

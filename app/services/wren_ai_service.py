@@ -6,7 +6,9 @@ from typing import AsyncIterator
 
 logger = logging.getLogger(__name__)
 
+import httpx
 from fastapi.responses import FileResponse, JSONResponse
+from app.decorators.external_api import external_api
 
 from app.utils.validate_sqlstr import validate_sql
 import json
@@ -15,6 +17,7 @@ from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.dtos.user_dto import UserReadDTO
 from app.dtos.wren_ai_dto import (
     AskRequestDTO,
+    ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
     GenerateSQLRequestDTO,
@@ -36,6 +39,7 @@ info = json.loads(decoded)
 client = bigquery.Client.from_service_account_info(info)
 
 
+@external_api("wren_ai")
 class WrenAiService(BaseHTTPService):
 
     def __init__(self):
@@ -61,6 +65,12 @@ class WrenAiService(BaseHTTPService):
                 code=400,
             )
         return chatbot
+
+    def get_chatbot(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int
+    ) -> ChatbotReadDTO:
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+        return ChatbotReadDTO(id=chatbot.id, name=chatbot.name)
 
     async def generate_sql(
         self, endpoint: str, req: GenerateSQLRequestDTO, db: Session, user: UserReadDTO
