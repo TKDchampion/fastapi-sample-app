@@ -9,7 +9,9 @@ import enum
 
 
 class ArtifactType(str, enum.Enum):
-    chart = "chart"
+    line = "line"
+    bar = "bar"
+    pie = "pie"
     table = "table"
     image = "image"
     file = "file"

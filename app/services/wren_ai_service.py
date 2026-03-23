@@ -28,8 +28,14 @@ from app.dtos.wren_ai_dto import (
     RunSQLResponseDTO,
 )
 from app.domain.exception.domain_exception import DomainException
+from app.entities.artifact_entity import ArtifactType
 from app.entities.message_entity import MessageContentType, MessageRole, MessageStatus
-from app.repositories import chatbot_repository, message_repository, thread_repository
+from app.repositories import (
+    artifact_repository,
+    chatbot_repository,
+    message_repository,
+    thread_repository,
+)
 from app.services.base_http_service import BaseHTTPService
 from app.services.permission_guard_service import verify_user_permission
 
@@ -82,7 +88,7 @@ class WrenAiService(BaseHTTPService):
         payload = {
             "projectId": chatbot.wren_project_id,
             "question": req.question,
-            **({"threadId": req.threadId} if req.threadId else {}),
+            **({"threadId": req.wren_ai_thread_id} if req.wren_ai_thread_id else {}),
         }
         data = await self.post(path=endpoint, payload=payload, token=chatbot.wren_key)
         return GenerateSQLResponseDTO(**data)
@@ -94,30 +100,33 @@ class WrenAiService(BaseHTTPService):
         payload = {
             "projectId": chatbot.wren_project_id,
             "sql": req.sql,
-            **({"threadId": req.threadId} if req.threadId else {}),
+            **({"threadId": req.wren_ai_thread_id} if req.wren_ai_thread_id else {}),
         }
         data = await self.post(path=endpoint, payload=payload, token=chatbot.wren_key)
-        return RunSQLResponseDTO(**data)
+        result = RunSQLResponseDTO(**data)
 
-    def _extract_stream_as_json(self, buffer: bytes) -> list:
-        events = []
-        for line in buffer.split(b"\n"):
-            if not line.startswith(b"data:"):
-                continue
-            try:
-                data = json.loads(line[5:].strip())
-                events.append(data)
-            except Exception:
-                pass
-        return events
+        if req.thread_id and req.message_id:
+            self.create_artifact(
+                db=db,
+                thread_id=uuid.UUID(req.thread_id),
+                message_id=uuid.UUID(req.message_id),
+                type="table",
+                title=req.title,
+                data_json=result,
+            )
+
+        return result
+
+    def _extract_stream_as_json(self, buffer: bytes) -> str:
+        return buffer.decode("utf-8")
 
     def create_messages(
         self,
         db: Session,
         thread_id: uuid.UUID,
         user_msg: CreateMessageDTO,
-        system_content_json: list,
-    ) -> None:
+        system_content_json: str,
+    ) -> uuid.UUID:
         parent_id = (
             uuid.UUID(user_msg.parent_message_id)
             if user_msg.parent_message_id
@@ -136,7 +145,7 @@ class WrenAiService(BaseHTTPService):
             status=MessageStatus.final,
             parent_message_id=parent_id,
         )
-        message_repository.create_message(
+        system_message = message_repository.create_message(
             db=db,
             thread_id=thread_id,
             seq=next_seq + 1,
@@ -149,6 +158,7 @@ class WrenAiService(BaseHTTPService):
         )
         db.commit()
         thread_repository.update_thread_stats(db, thread_id, message_count_increment=2)
+        return system_message.id
 
     def _create_thread_from_chunk(
         self, buffer: bytes, db: Session, user: UserReadDTO, chatbot, req: AskRequestDTO
@@ -230,11 +240,45 @@ class WrenAiService(BaseHTTPService):
                         status="final",
                         parent_message_id=None,
                     )
-                    self.create_messages(db, thread_id, user_msg, stream_json)
+                    message_id = self.create_messages(db, thread_id, user_msg, stream_json)
+                    yield (
+                        f'data: {{"type": "message_created", "data": {{"message_id": "{message_id}"}}}}\n\n'
+                    ).encode()
             except Exception as e:
                 logger.exception("CREATE_MESSAGES_ERROR: %s", e)
 
         return _stream()
+
+    def create_artifact(
+        self,
+        db: Session,
+        thread_id: uuid.UUID,
+        message_id: uuid.UUID,
+        type: str,
+        title: str,
+        spec_json: dict | None,
+        data_json: list | None,
+        storage_url: str | None = None,
+    ):
+        message = message_repository.get_message_by_thread_and_id(
+            db, thread_id, message_id
+        )
+        if not message:
+            raise DomainException(
+                msg="Message not found in thread",
+                type="message_not_found",
+                code=404,
+            )
+        return artifact_repository.create_artifact(
+            db=db,
+            thread_id=thread_id,
+            message_id=message_id,
+            type=ArtifactType(type),
+            title=title,
+            spec_json=spec_json,
+            data_json=data_json,
+            storage_url=storage_url,
+        )
 
     async def run_chart(
         self, endpoint: str, req: ChartRequestDTO, db: Session, user: UserReadDTO
@@ -245,10 +289,22 @@ class WrenAiService(BaseHTTPService):
             "question": req.question,
             "customInstruction": f"{req.customInstruction} chart",
             "sql": req.sql,
-            **({"threadId": req.threadId} if req.threadId else {}),
+            **({"threadId": req.wren_ai_thread_id} if req.wren_ai_thread_id else {}),
         }
         data = await self.post(path=endpoint, payload=payload, token=chatbot.wren_key)
-        return ChartResponseDTO(**data)
+        result = ChartResponseDTO(**data)
+
+        if req.thread_id and req.message_id:
+            self.create_artifact(
+                db=db,
+                thread_id=uuid.UUID(req.thread_id),
+                message_id=uuid.UUID(req.message_id),
+                type=req.customInstruction,
+                title=req.title,
+                data_json=result,
+            )
+
+        return result
 
     async def download_table(self, query: str):
         count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"

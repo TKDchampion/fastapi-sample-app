@@ -13,6 +13,17 @@ def get_next_seq(db: Session, thread_id: uuid.UUID) -> int:
     return result + 1
 
 
+def get_message_by_thread_and_id(
+    db: Session, thread_id: uuid.UUID, message_id: uuid.UUID
+) -> MessageEntity | None:
+    return db.execute(
+        select(MessageEntity).where(
+            MessageEntity.thread_id == thread_id,
+            MessageEntity.id == message_id,
+        )
+    ).scalar_one_or_none()
+
+
 def create_message(
     db: Session,
     thread_id: uuid.UUID,

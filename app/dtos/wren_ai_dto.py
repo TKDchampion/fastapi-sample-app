@@ -38,7 +38,7 @@ class AskRequestDTO(BaseModel):
 
 class GenerateSQLRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
-    threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
     si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
 
@@ -46,14 +46,20 @@ class GenerateSQLRequestDTO(BaseModel):
 class GenerateSQLResponseDTO(BaseModel):
     id: str
     sql: str
-    threadId: str
+    wren_ai_thread_id: str = Field(..., alias="threadId")
+
+    class Config:
+        populate_by_name = True
 
 
 class RunSQLRequestDTO(BaseModel):
     sql: str = Field(..., description="SQL query")
-    threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
     si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
+    thread_id: Optional[str] = Field(None, description="System thread UUID for artifact creation")
+    message_id: Optional[str] = Field(None, description="Message UUID to attach artifact to")
+    title: Optional[str] = Field(None, description="Artifact title, required when message_id is provided")
 
 
 class ColumnDTO(BaseModel):
@@ -65,7 +71,7 @@ class RunSQLResponseDTO(BaseModel):
     id: str
     records: List[Any]
     columns: List[ColumnDTO]
-    thread_id: Optional[str] = Field(..., alias="threadId")
+    wren_ai_thread_id: Optional[str] = Field(..., alias="threadId")
     total_rows: Optional[int] = Field(..., alias="totalRows")
 
 
@@ -119,19 +125,25 @@ class VegaSpecModel(BaseModel):
 class ChartResponseDTO(BaseModel):
     id: str = Field(..., description="Unique identifier")
     vegaSpec: VegaSpecModel = Field(..., alias="vegaSpec")
-    threadId: str = Field(..., description="Thread identifier")
+    wren_ai_thread_id: str = Field(..., alias="threadId", description="Wren AI thread identifier")
+
+    class Config:
+        populate_by_name = True
 
 
 class ChartRequestDTO(BaseModel):
     question: str = Field(..., description="question")
     customInstruction: Literal["bar", "pie", "line"] = Field(
         ...,
-        description="Chart type: 'bar' (柱狀圖), 'pie' (圓餅圖), 'line' (折線圖)",
+        description="Chart type: 'bar' (柱狀圖), 'pie' (圓餅圓), 'line' (折線圖)",
     )
     sql: str = Field(..., description="SQL query")
-    threadId: Optional[str] = Field(None, description="Thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
     si_id: int = Field(..., description="SI ID for permission check")
     org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
+    thread_id: Optional[str] = Field(None, description="System thread UUID for artifact creation")
+    message_id: Optional[str] = Field(None, description="Message UUID to attach artifact to")
+    title: Optional[str] = Field(None, description="Artifact title, required when message_id is provided")
 
 
 class QueryTablesRequestDTO(BaseModel):
