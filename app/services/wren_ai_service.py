@@ -3,11 +3,10 @@ import logging
 import os
 import tempfile
 import uuid
-from typing import AsyncIterator
+from typing import AsyncIterator, Optional
 
 logger = logging.getLogger(__name__)
 
-import httpx
 from fastapi.responses import FileResponse, JSONResponse
 from app.decorators.external_api import external_api
 
@@ -26,6 +25,9 @@ from app.dtos.wren_ai_dto import (
     GenerateSQLResponseDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
+    ThreadListResponseDTO,
+    ThreadPageDTO,
+    ThreadReadDTO,
 )
 from app.domain.exception.domain_exception import DomainException
 from app.entities.artifact_entity import ArtifactType
@@ -74,6 +76,49 @@ class WrenAiService(BaseHTTPService):
                 code=400,
             )
         return chatbot
+
+    def get_threads(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        user_id_filter: Optional[int],
+        chatbot_id_filter: Optional[int],
+        cursor: Optional[str],
+        limit: int,
+    ) -> ThreadListResponseDTO:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        threads = thread_repository.get_threads(
+            db, org_id, user_id_filter, chatbot_id_filter, cursor, limit
+        )
+
+        next_cursor = None
+        if len(threads) == limit:
+            last = threads[-1]
+            raw = f"{last.last_message_at.isoformat() if last.last_message_at else ''}|{last.id}"
+            next_cursor = base64.b64encode(raw.encode()).decode()
+
+        items = [
+            ThreadReadDTO(
+                id=str(t.id),
+                wren_ai_thread_id=t.wren_thread_id,
+                org_id=t.org_id,
+                user_id=t.user_id,
+                chatbot_id=t.chatbot_id,
+                title=t.title,
+                last_message_at=t.last_message_at,
+                message_count=t.message_count,
+                created_at=t.created_at,
+                updated_at=t.updated_at,
+            )
+            for t in threads
+        ]
+        return ThreadListResponseDTO(items=items, page=ThreadPageDTO(next_cursor=next_cursor))
 
     def get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
@@ -240,7 +285,9 @@ class WrenAiService(BaseHTTPService):
                         status="final",
                         parent_message_id=None,
                     )
-                    message_id = self.create_messages(db, thread_id, user_msg, stream_json)
+                    message_id = self.create_messages(
+                        db, thread_id, user_msg, stream_json
+                    )
                     yield (
                         f'data: {{"type": "message_created", "data": {{"message_id": "{message_id}"}}}}\n\n'
                     ).encode()

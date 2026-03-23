@@ -1,5 +1,6 @@
 import logging
-from fastapi import APIRouter, Response
+from typing import Optional
+from fastapi import APIRouter, Query, Response
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
@@ -17,6 +18,7 @@ from app.dtos.wren_ai_dto import (
     QueryTablesRequestDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
+    ThreadListResponseDTO,
 )
 from app.decorators.router_try import router_try
 from app.services.wren_ai_service import WrenAiService
@@ -25,6 +27,21 @@ from app.services.jwt_service import token_required
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/wren_ai", tags=["Wren AI"])
+
+
+@router.get("/si/{si_id}/org/{org_id}/chat/threads", response_model=ThreadListResponseDTO)
+@router_try()
+def get_threads_endpoint(
+    si_id: int,
+    org_id: int,
+    chatbot_id: Optional[int] = Query(None),
+    cursor: Optional[str] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.get_threads(db, user_info, si_id, org_id, user_info.id, chatbot_id, cursor, limit)
 
 
 @router.get("/si/{si_id}/org/{org_id}/chatbot", response_model=ChatbotReadDTO)

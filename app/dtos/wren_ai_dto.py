@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, List, Literal, Optional
 from pydantic import BaseModel, Field, model_validator
 
@@ -158,3 +159,25 @@ class QueryTableMessageResponseDTO(BaseModel):
 class ChatbotReadDTO(BaseModel):
     id: int
     name: str
+
+
+class ThreadReadDTO(BaseModel):
+    id: str
+    wren_ai_thread_id: str
+    org_id: int
+    user_id: int
+    chatbot_id: int
+    title: str
+    last_message_at: Optional[datetime]
+    message_count: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class ThreadPageDTO(BaseModel):
+    next_cursor: Optional[str] = None
+
+
+class ThreadListResponseDTO(BaseModel):
+    items: List[ThreadReadDTO]
+    page: ThreadPageDTO
