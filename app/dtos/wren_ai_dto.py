@@ -4,21 +4,37 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class CreateMessageDTO(BaseModel):
-    role: Literal["user", "system", "assistant", "tool"] = Field("user", description="Message role")
-    content_type: Literal["text", "markdown", "json", "tool_call", "tool_result", "image_ref", "error"] = Field("text", description="Content type")
+    role: Literal["user", "system", "assistant", "tool"] = Field(
+        "user", description="Message role"
+    )
+    content_type: Literal[
+        "text", "markdown", "json", "tool_call", "tool_result", "image_ref", "error"
+    ] = Field("text", description="Content type")
     content_text: Optional[str] = Field(None, description="Text content")
     content_json: Optional[dict] = Field(None, description="JSON content")
-    status: Literal["final", "streaming", "failed", "cancelled"] = Field("final", description="Message status")
-    parent_message_id: Optional[str] = Field(None, description="Parent message ID (UUID)")
+    status: Literal["final", "streaming", "failed", "cancelled"] = Field(
+        "final", description="Message status"
+    )
+    parent_message_id: Optional[str] = Field(
+        None, description="Parent message ID (UUID)"
+    )
 
 
 class AskRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
-    wren_ai_thread_id: Optional[str] = Field(None, description="Wren thread ID for the request")
-    thread_id: Optional[str] = Field(None, description="System thread ID (returned after first ask)")
-    title: Optional[str] = Field(None, description="Thread title, required when creating a new conversation")
+    wren_ai_thread_id: Optional[str] = Field(
+        None, description="Wren thread ID for the request"
+    )
+    thread_id: Optional[str] = Field(
+        None, description="System thread ID (returned after first ask)"
+    )
+    title: Optional[str] = Field(
+        None, description="Thread title, required when creating a new conversation"
+    )
     si_id: int = Field(..., description="SI ID for permission check")
-    org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
+    org_id: int = Field(
+        ..., description="Organization ID to look up chatbot credentials"
+    )
 
     @model_validator(mode="after")
     def validate_thread_and_title(self):
@@ -28,20 +44,28 @@ class AskRequestDTO(BaseModel):
         if not has_wren and not has_thread:
             # 新增情境：title 必填
             if not self.title:
-                raise ValueError("title is required when creating a new conversation (wren_ai_thread_id and thread_id are both absent)")
+                raise ValueError(
+                    "title is required when creating a new conversation (wren_ai_thread_id and thread_id are both absent)"
+                )
         else:
             # 繼續情境：wren_ai_thread_id 和 thread_id 必須同時填
             if not has_wren or not has_thread:
-                raise ValueError("wren_ai_thread_id and thread_id must both be provided together")
+                raise ValueError(
+                    "wren_ai_thread_id and thread_id must both be provided together"
+                )
 
         return self
 
 
 class GenerateSQLRequestDTO(BaseModel):
     question: str = Field(..., description="Natural language question")
-    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(
+        None, description="Wren AI thread ID for the request"
+    )
     si_id: int = Field(..., description="SI ID for permission check")
-    org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
+    org_id: int = Field(
+        ..., description="Organization ID to look up chatbot credentials"
+    )
 
 
 class GenerateSQLResponseDTO(BaseModel):
@@ -55,12 +79,22 @@ class GenerateSQLResponseDTO(BaseModel):
 
 class RunSQLRequestDTO(BaseModel):
     sql: str = Field(..., description="SQL query")
-    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(
+        None, description="Wren AI thread ID for the request"
+    )
     si_id: int = Field(..., description="SI ID for permission check")
-    org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
-    thread_id: Optional[str] = Field(None, description="System thread UUID for artifact creation")
-    message_id: Optional[str] = Field(None, description="Message UUID to attach artifact to")
-    title: Optional[str] = Field(None, description="Artifact title, required when message_id is provided")
+    org_id: int = Field(
+        ..., description="Organization ID to look up chatbot credentials"
+    )
+    thread_id: Optional[str] = Field(
+        None, description="System thread UUID for artifact creation"
+    )
+    message_id: Optional[str] = Field(
+        None, description="Message UUID to attach artifact to"
+    )
+    title: Optional[str] = Field(
+        None, description="Artifact title, required when message_id is provided"
+    )
 
 
 class ColumnDTO(BaseModel):
@@ -126,7 +160,9 @@ class VegaSpecModel(BaseModel):
 class ChartResponseDTO(BaseModel):
     id: str = Field(..., description="Unique identifier")
     vegaSpec: VegaSpecModel = Field(..., alias="vegaSpec")
-    wren_ai_thread_id: str = Field(..., alias="threadId", description="Wren AI thread identifier")
+    wren_ai_thread_id: str = Field(
+        ..., alias="threadId", description="Wren AI thread identifier"
+    )
 
     class Config:
         populate_by_name = True
@@ -139,12 +175,22 @@ class ChartRequestDTO(BaseModel):
         description="Chart type: 'bar' (柱狀圖), 'pie' (圓餅圓), 'line' (折線圖)",
     )
     sql: str = Field(..., description="SQL query")
-    wren_ai_thread_id: Optional[str] = Field(None, description="Wren AI thread ID for the request")
+    wren_ai_thread_id: Optional[str] = Field(
+        None, description="Wren AI thread ID for the request"
+    )
     si_id: int = Field(..., description="SI ID for permission check")
-    org_id: int = Field(..., description="Organization ID to look up chatbot credentials")
-    thread_id: Optional[str] = Field(None, description="System thread UUID for artifact creation")
-    message_id: Optional[str] = Field(None, description="Message UUID to attach artifact to")
-    title: Optional[str] = Field(None, description="Artifact title, required when message_id is provided")
+    org_id: int = Field(
+        ..., description="Organization ID to look up chatbot credentials"
+    )
+    thread_id: Optional[str] = Field(
+        None, description="System thread UUID for artifact creation"
+    )
+    message_id: Optional[str] = Field(
+        None, description="Message UUID to attach artifact to"
+    )
+    title: Optional[str] = Field(
+        None, description="Artifact title, required when message_id is provided"
+    )
 
 
 class QueryTablesRequestDTO(BaseModel):
@@ -159,6 +205,43 @@ class QueryTableMessageResponseDTO(BaseModel):
 class ChatbotReadDTO(BaseModel):
     id: int
     name: str
+
+
+class ArtifactSummaryDTO(BaseModel):
+    id: str
+    message_id: str
+    type: str
+    title: Optional[str] = None
+
+
+class MessageReadDTO(BaseModel):
+    id: str
+    thread_id: str
+    seq: int
+    role: str
+    content_type: str
+    content_text: Optional[str]
+    content_json: Optional[Any]
+    status: str
+    parent_message_id: Optional[str]
+    created_at: datetime
+    artifacts: List[ArtifactSummaryDTO]
+
+
+class ThreadSummaryDTO(BaseModel):
+    id: str
+    wren_thread_id: str
+    title: str
+
+
+class MessagePageDTO(BaseModel):
+    next_cursor: Optional[str] = None
+
+
+class MessageListResponseDTO(BaseModel):
+    thread: ThreadSummaryDTO
+    items: List[MessageReadDTO]
+    page: MessagePageDTO
 
 
 class ThreadReadDTO(BaseModel):

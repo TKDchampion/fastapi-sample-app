@@ -1,5 +1,6 @@
 import logging
-from typing import Optional
+import uuid
+from typing import Literal, Optional
 from fastapi import APIRouter, Query, Response
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
@@ -18,6 +19,7 @@ from app.dtos.wren_ai_dto import (
     QueryTablesRequestDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
+    MessageListResponseDTO,
     ThreadListResponseDTO,
 )
 from app.decorators.router_try import router_try
@@ -29,7 +31,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/wren_ai", tags=["Wren AI"])
 
 
-@router.get("/si/{si_id}/org/{org_id}/chat/threads", response_model=ThreadListResponseDTO)
+@router.get(
+    "/si/{si_id}/org/{org_id}/chat/threads", response_model=ThreadListResponseDTO
+)
 @router_try()
 def get_threads_endpoint(
     si_id: int,
@@ -41,7 +45,37 @@ def get_threads_endpoint(
     user_info: UserReadDTO = Depends(token_required),
     db: Session = Depends(get_db),
 ):
-    return service.get_threads(db, user_info, si_id, org_id, user_info.id, chatbot_id, cursor, limit)
+    return service.get_threads(
+        db, user_info, si_id, org_id, user_info.id, chatbot_id, cursor, limit
+    )
+
+
+@router.get(
+    "/si/{si_id}/org/{org_id}/chat/threads/{thread_id}/messages",
+    response_model=MessageListResponseDTO,
+)
+@router_try()
+def get_messages_endpoint(
+    si_id: int,
+    org_id: int,
+    thread_id: str,
+    cursor: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    order: Literal["asc", "desc"] = Query("asc"),
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.get_messages(
+        db,
+        user_info,
+        si_id,
+        org_id,
+        uuid.UUID(thread_id),
+        cursor,
+        limit,
+        order,
+    )
 
 
 @router.get("/si/{si_id}/org/{org_id}/chatbot", response_model=ChatbotReadDTO)

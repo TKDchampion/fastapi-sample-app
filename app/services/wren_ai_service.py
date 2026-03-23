@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.dtos.user_dto import UserReadDTO
 from app.dtos.wren_ai_dto import (
+    ArtifactSummaryDTO,
     AskRequestDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
@@ -23,11 +24,15 @@ from app.dtos.wren_ai_dto import (
     CreateMessageDTO,
     GenerateSQLRequestDTO,
     GenerateSQLResponseDTO,
+    MessageListResponseDTO,
+    MessagePageDTO,
+    MessageReadDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
     ThreadListResponseDTO,
     ThreadPageDTO,
     ThreadReadDTO,
+    ThreadSummaryDTO,
 )
 from app.domain.exception.domain_exception import DomainException
 from app.entities.artifact_entity import ArtifactType
@@ -118,7 +123,83 @@ class WrenAiService(BaseHTTPService):
             )
             for t in threads
         ]
-        return ThreadListResponseDTO(items=items, page=ThreadPageDTO(next_cursor=next_cursor))
+        return ThreadListResponseDTO(
+            items=items, page=ThreadPageDTO(next_cursor=next_cursor)
+        )
+
+    def get_messages(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        thread_id: uuid.UUID,
+        cursor: Optional[str],
+        limit: int,
+        order: str,
+    ) -> MessageListResponseDTO:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        thread = thread_repository.get_thread_by_id(db, thread_id)
+        if not thread or thread.org_id != org_id:
+            raise DomainException(msg="Thread not found", type="not_found", code=404)
+
+        cursor_seq = None
+        if cursor:
+            try:
+                cursor_seq = int(base64.b64decode(cursor).decode())
+            except Exception:
+                pass
+
+        messages = message_repository.get_messages(
+            db, thread_id, cursor_seq, limit, order
+        )
+
+        next_cursor = None
+        if len(messages) == limit:
+            next_cursor = base64.b64encode(str(messages[-1].seq).encode()).decode()
+
+        items = [
+            MessageReadDTO(
+                id=str(m.id),
+                thread_id=str(m.thread_id),
+                seq=m.seq,
+                role=m.role.value,
+                content_type=m.content_type.value,
+                content_text=m.content_text,
+                content_json=m.content_json,
+                status=m.status.value,
+                parent_message_id=(
+                    str(m.parent_message_id) if m.parent_message_id else None
+                ),
+                created_at=m.created_at,
+                artifacts=(
+                    [
+                        ArtifactSummaryDTO(
+                            id=str(a.id),
+                            message_id=str(a.message_id),
+                            type=a.type.value,
+                            title=a.title,
+                        )
+                        for a in m.artifacts
+                    ]
+                ),
+            )
+            for m in messages
+        ]
+
+        return MessageListResponseDTO(
+            thread=ThreadSummaryDTO(
+                id=str(thread.id),
+                wren_thread_id=thread.wren_thread_id,
+                title=thread.title,
+            ),
+            items=items,
+            page=MessagePageDTO(next_cursor=next_cursor),
+        )
 
     def get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int

@@ -1,7 +1,46 @@
 import uuid
+from typing import Optional
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
-from app.entities.message_entity import MessageEntity, MessageRole, MessageContentType, MessageStatus
+from sqlalchemy.orm import Session, selectinload, load_only
+from app.entities.message_entity import (
+    MessageEntity,
+    MessageRole,
+    MessageContentType,
+    MessageStatus,
+)
+from app.entities.artifact_entity import ArtifactEntity
+
+
+def get_messages(
+    db: Session,
+    thread_id: uuid.UUID,
+    cursor_seq: Optional[int] = None,
+    limit: int = 50,
+    order: str = "asc",
+) -> list[MessageEntity]:
+    query = select(MessageEntity).where(MessageEntity.thread_id == thread_id)
+
+    query = query.options(
+        selectinload(MessageEntity.artifacts).load_only(
+            ArtifactEntity.id,
+            ArtifactEntity.message_id,
+            ArtifactEntity.type,
+            ArtifactEntity.title,
+        )
+    )
+
+    if cursor_seq is not None:
+        if order == "asc":
+            query = query.where(MessageEntity.seq > cursor_seq)
+        else:
+            query = query.where(MessageEntity.seq < cursor_seq)
+
+    if order == "asc":
+        query = query.order_by(MessageEntity.seq.asc())
+    else:
+        query = query.order_by(MessageEntity.seq.desc())
+
+    return list(db.execute(query.limit(limit)).scalars().all())
 
 
 def get_next_seq(db: Session, thread_id: uuid.UUID) -> int:
