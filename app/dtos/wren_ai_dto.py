@@ -207,6 +207,18 @@ class ChatbotReadDTO(BaseModel):
     name: str
 
 
+class ArtifactReadDTO(BaseModel):
+    id: str
+    thread_id: str
+    message_id: str
+    type: str
+    title: Optional[str] = None
+    spec_json: Optional[Any] = None
+    data_json: Optional[Any] = None
+    storage_url: Optional[str] = None
+    created_at: datetime
+
+
 class ArtifactSummaryDTO(BaseModel):
     id: str
     message_id: str

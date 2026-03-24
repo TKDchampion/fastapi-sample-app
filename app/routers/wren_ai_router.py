@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from app.database import get_db
 from app.dtos.user_dto import UserReadDTO
 from app.dtos.wren_ai_dto import (
+    ArtifactReadDTO,
     AskRequestDTO,
     AskResponse,
     ChatbotReadDTO,
@@ -75,6 +76,32 @@ def get_messages_endpoint(
         cursor,
         limit,
         order,
+    )
+
+
+@router.get(
+    "/si/{si_id}/org/{org_id}/chat/thread/{thread_id}/message/{message_id}/artifact/{artifact_id}",
+    response_model=ArtifactReadDTO,
+)
+@router_try()
+def get_artifact_endpoint(
+    si_id: int,
+    org_id: int,
+    thread_id: str,
+    message_id: str,
+    artifact_id: str,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.get_artifact(
+        db,
+        user_info,
+        si_id,
+        org_id,
+        uuid.UUID(thread_id),
+        uuid.UUID(message_id),
+        uuid.UUID(artifact_id),
     )
 
 

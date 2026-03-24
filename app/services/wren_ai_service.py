@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.dtos.user_dto import UserReadDTO
 from app.dtos.wren_ai_dto import (
+    ArtifactReadDTO,
     ArtifactSummaryDTO,
     AskRequestDTO,
     ChatbotReadDTO,
@@ -199,6 +200,45 @@ class WrenAiService(BaseHTTPService):
             ),
             items=items,
             page=MessagePageDTO(next_cursor=next_cursor),
+        )
+
+    def get_artifact(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        thread_id: uuid.UUID,
+        message_id: uuid.UUID,
+        artifact_id: uuid.UUID,
+    ) -> ArtifactReadDTO:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        thread = thread_repository.get_thread_by_id(db, thread_id)
+        if not thread or thread.org_id != org_id:
+            raise DomainException(msg="Thread not found", type="not_found", code=404)
+
+        message = message_repository.get_message_by_thread_and_id(db, thread_id, message_id)
+        if not message:
+            raise DomainException(msg="Message not found", type="not_found", code=404)
+
+        artifact = artifact_repository.get_artifact_by_id(db, artifact_id, message_id)
+        if not artifact:
+            raise DomainException(msg="Artifact not found", type="not_found", code=404)
+
+        return ArtifactReadDTO(
+            id=str(artifact.id),
+            thread_id=str(artifact.thread_id),
+            message_id=str(artifact.message_id),
+            type=artifact.type.value,
+            title=artifact.title,
+            spec_json=artifact.spec_json,
+            data_json=artifact.data_json,
+            storage_url=artifact.storage_url,
+            created_at=artifact.created_at,
         )
 
     def get_chatbot(
