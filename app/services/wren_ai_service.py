@@ -221,7 +221,9 @@ class WrenAiService(BaseHTTPService):
         if not thread or thread.org_id != org_id:
             raise DomainException(msg="Thread not found", type="not_found", code=404)
 
-        message = message_repository.get_message_by_thread_and_id(db, thread_id, message_id)
+        message = message_repository.get_message_by_thread_and_id(
+            db, thread_id, message_id
+        )
         if not message:
             raise DomainException(msg="Message not found", type="not_found", code=404)
 
