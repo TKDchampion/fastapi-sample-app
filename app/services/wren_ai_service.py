@@ -241,6 +241,55 @@ class WrenAiService(BaseHTTPService):
             created_at=artifact.created_at,
         )
 
+    def rename_thread(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        thread_id: uuid.UUID,
+        title: str,
+    ) -> ThreadReadDTO:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        thread = thread_repository.get_thread_by_id(db, thread_id)
+        if not thread or thread.org_id != org_id:
+            raise DomainException(msg="Thread not found", type="not_found", code=404)
+        thread = thread_repository.rename_thread(db, thread_id, title)
+        return ThreadReadDTO(
+            id=str(thread.id),
+            wren_ai_thread_id=thread.wren_thread_id,
+            org_id=thread.org_id,
+            user_id=thread.user_id,
+            chatbot_id=thread.chatbot_id,
+            title=thread.title,
+            last_message_at=thread.last_message_at,
+            message_count=thread.message_count,
+            created_at=thread.created_at,
+            updated_at=thread.updated_at,
+        )
+
+    def delete_thread(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        thread_id: uuid.UUID,
+    ) -> None:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        thread = thread_repository.get_thread_by_id(db, thread_id)
+        if not thread or thread.org_id != org_id:
+            raise DomainException(msg="Thread not found", type="not_found", code=404)
+        thread_repository.delete_thread(db, thread_id)
+
     def get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
     ) -> ChatbotReadDTO:

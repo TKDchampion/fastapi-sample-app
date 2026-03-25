@@ -276,3 +276,7 @@ class ThreadPageDTO(BaseModel):
 class ThreadListResponseDTO(BaseModel):
     items: List[ThreadReadDTO]
     page: ThreadPageDTO
+
+
+class RenameThreadRequestDTO(BaseModel):
+    title: str = Field(..., description="New thread title")

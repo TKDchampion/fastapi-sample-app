@@ -18,10 +18,12 @@ from app.dtos.wren_ai_dto import (
     GenerateSQLResponseDTO,
     QueryTableMessageResponseDTO,
     QueryTablesRequestDTO,
+    RenameThreadRequestDTO,
     RunSQLRequestDTO,
     RunSQLResponseDTO,
     MessageListResponseDTO,
     ThreadListResponseDTO,
+    ThreadReadDTO,
 )
 from app.decorators.router_try import router_try
 from app.services.wren_ai_service import WrenAiService
@@ -49,6 +51,41 @@ def get_threads_endpoint(
     return service.get_threads(
         db, user_info, si_id, org_id, user_info.id, chatbot_id, cursor, limit
     )
+
+
+@router.patch(
+    "/si/{si_id}/org/{org_id}/chat/threads/{thread_id}",
+    response_model=ThreadReadDTO,
+)
+@router_try()
+def rename_thread_endpoint(
+    si_id: int,
+    org_id: int,
+    thread_id: str,
+    body: RenameThreadRequestDTO,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.rename_thread(
+        db, user_info, si_id, org_id, uuid.UUID(thread_id), body.title
+    )
+
+
+@router.delete(
+    "/si/{si_id}/org/{org_id}/chat/threads/{thread_id}",
+    status_code=204,
+)
+@router_try()
+def delete_thread_endpoint(
+    si_id: int,
+    org_id: int,
+    thread_id: str,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    service.delete_thread(db, user_info, si_id, org_id, uuid.UUID(thread_id))
 
 
 @router.get(

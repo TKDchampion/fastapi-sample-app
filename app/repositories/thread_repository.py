@@ -75,6 +75,28 @@ def update_thread_stats(db: Session, thread_id: uuid.UUID, message_count_increme
         db.commit()
 
 
+def rename_thread(db: Session, thread_id: uuid.UUID, title: str) -> ThreadEntity | None:
+    thread = db.execute(
+        select(ThreadEntity).where(ThreadEntity.id == thread_id)
+    ).scalar_one_or_none()
+    if thread:
+        thread.title = title
+        db.commit()
+        db.refresh(thread)
+    return thread
+
+
+def delete_thread(db: Session, thread_id: uuid.UUID) -> bool:
+    thread = db.execute(
+        select(ThreadEntity).where(ThreadEntity.id == thread_id)
+    ).scalar_one_or_none()
+    if not thread:
+        return False
+    db.delete(thread)
+    db.commit()
+    return True
+
+
 def create_thread(
     db: Session,
     wren_thread_id: str,
