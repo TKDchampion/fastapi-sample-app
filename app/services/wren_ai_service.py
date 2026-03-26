@@ -329,7 +329,7 @@ class WrenAiService(BaseHTTPService):
                 message_id=uuid.UUID(req.message_id),
                 type="table",
                 title=req.title,
-                data_json=result,
+                data_json=result.model_dump(),
             )
 
         return result
@@ -520,7 +520,7 @@ class WrenAiService(BaseHTTPService):
                 message_id=uuid.UUID(req.message_id),
                 type=req.customInstruction,
                 title=req.title,
-                data_json=result,
+                data_json=result.model_dump(),
             )
 
         return result
