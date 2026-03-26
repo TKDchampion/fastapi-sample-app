@@ -25,8 +25,8 @@ def create_artifact(
     message_id: uuid.UUID,
     type: ArtifactType,
     title: str,
-    spec_json: dict | None,
     data_json: list | None,
+    spec_json: dict | None = None,
     storage_url: str | None = None,
 ) -> ArtifactEntity:
     artifact = ArtifactEntity(
@@ -34,8 +34,8 @@ def create_artifact(
         message_id=message_id,
         type=type,
         title=title,
-        spec_json=spec_json,
         data_json=data_json,
+        spec_json=spec_json,
         storage_url=storage_url,
     )
     db.add(artifact)

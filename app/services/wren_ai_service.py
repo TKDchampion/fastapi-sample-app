@@ -475,8 +475,8 @@ class WrenAiService(BaseHTTPService):
         message_id: uuid.UUID,
         type: str,
         title: str,
-        spec_json: dict | None,
         data_json: list | None,
+        spec_json: dict | None = None,
         storage_url: str | None = None,
     ):
         message = message_repository.get_message_by_thread_and_id(
@@ -494,8 +494,8 @@ class WrenAiService(BaseHTTPService):
             message_id=message_id,
             type=ArtifactType(type),
             title=title,
-            spec_json=spec_json,
             data_json=data_json,
+            spec_json=spec_json,
             storage_url=storage_url,
         )
 
