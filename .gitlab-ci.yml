@@ -21,16 +21,14 @@ variables:
   CLOUD_RUN_SERVICE: "adnex-bi-be"
   SERVICE_ACCOUNT: "giant-wang-kdanmobile-com@adnex-product.iam.gserviceaccount.com"
 
-# 只在 dev 分支與「版本標籤」建立 pipeline（避免其它分支誤觸發）
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
     - when: never
 
-# 共用前置：安裝 docker CLI + gcloud 認證
 .before_gcloud_and_docker: &before_gcloud_and_docker
-  - apt-get update && apt-get install -y docker.io git
+  - apt-get update && apt-get install -y docker.io git curl postgresql-client python3 netcat-openbsd
   - gcloud auth revoke --all || true
   - echo "$GCP_SERVICE_ACCOUNT_KEY" | base64 -d > gcp-key.json
   - gcloud auth activate-service-account --key-file=gcp-key.json --quiet
@@ -52,9 +50,7 @@ build:
         docker push "$IMAGE_PROD"
       fi
   rules:
-    # dev 分支一定跑
     - if: '$CI_COMMIT_BRANCH == "dev"'
-    # 發版標籤也要跑（產 prod 用映像）
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
 
 # ========== MIGRATE ==========
@@ -63,13 +59,109 @@ migrate:
   needs: [build]
   before_script: *before_gcloud_and_docker
   script:
+    - echo "===== RUNNER PUBLIC IP ====="
+    - curl -s ifconfig.me || true
+    - echo ""
+
+    - echo "===== DATABASE_URL CHECK ====="
+    - test -n "$DATABASE_URL" || (echo "DATABASE_URL is empty"; exit 1)
+
+    - echo "===== PARSE DATABASE_URL IN JOB ====="
+    - |
+      export DB_HOST=$(python3 - <<'PY'
+      import os
+      from urllib.parse import urlparse, parse_qs
+      u = urlparse(os.environ["DATABASE_URL"])
+      qs = parse_qs(u.query)
+      host = u.hostname
+      if not host and "host" in qs:
+          vals = qs.get("host") or []
+          if vals:
+              host = vals[0]
+      print(host or "")
+      PY
+      )
+    - |
+      export DB_PORT=$(python3 - <<'PY'
+      import os
+      from urllib.parse import urlparse
+      u = urlparse(os.environ["DATABASE_URL"])
+      print(u.port or 5432)
+      PY
+      )
+    - |
+      export DB_NAME=$(python3 - <<'PY'
+      import os
+      from urllib.parse import urlparse
+      u = urlparse(os.environ["DATABASE_URL"])
+      print(u.path.lstrip("/"))
+      PY
+      )
+    - |
+      export IS_SOCKET=$(python3 - <<'PY'
+      import os
+      from urllib.parse import urlparse, parse_qs
+      u = urlparse(os.environ["DATABASE_URL"])
+      qs = parse_qs(u.query)
+      vals = qs.get("host") or []
+      print("true" if any("/cloudsql/" in v for v in vals) else "false")
+      PY
+      )
+
+    - echo "DB_HOST=$DB_HOST"
+    - echo "DB_PORT=$DB_PORT"
+    - echo "DB_NAME=$DB_NAME"
+    - echo "IS_SOCKET=$IS_SOCKET"
+
+    - echo "===== TCP / SOCKET CHECK IN JOB ====="
+    - |
+      if [ "$IS_SOCKET" = "true" ]; then
+        echo "DATABASE_URL is using Cloud SQL socket format"
+        echo "Checking /cloudsql path..."
+        ls -la /cloudsql || true
+      else
+        echo "Testing TCP connectivity..."
+        nc -zv "$DB_HOST" "$DB_PORT"
+      fi
+
+    - echo "===== PSQL CHECK IN JOB ====="
+    - psql "$DATABASE_URL" -c "select 1;"
+
+    - echo "===== APP CONTAINER CHECK ====="
     - docker pull "$IMAGE_DEV"
     - |
       docker run --rm \
         --entrypoint /bin/sh \
         -e DATABASE_URL="$DATABASE_URL" \
         "$IMAGE_DEV" \
-        -c 'echo ">>> Inside container DATABASE_URL = $DATABASE_URL"; alembic upgrade head'
+        -c '
+          echo "Inside app container: DATABASE_URL exists?"
+          test -n "$DATABASE_URL" || (echo "DATABASE_URL missing"; exit 1)
+
+          python3 - <<'"'"'PY'"'"'
+import os
+from urllib.parse import urlparse, parse_qs
+
+u = urlparse(os.environ["DATABASE_URL"])
+qs = parse_qs(u.query)
+host = u.hostname
+if not host and "host" in qs:
+    vals = qs.get("host") or []
+    if vals:
+        host = vals[0]
+
+print(f"container host={host}")
+print(f"container port={u.port or 5432}")
+print(f"container db={u.path.lstrip('/')}")
+print(f"container is_socket={any('/cloudsql/' in v for v in (qs.get('host') or []))}")
+PY
+
+          echo "Testing psql inside app container..."
+          psql "$DATABASE_URL" -c "select 1;"
+
+          echo ">>> Running alembic upgrade head"
+          alembic upgrade head
+        '
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
