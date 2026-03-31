@@ -52,8 +52,8 @@ class ThreadEntity(Base):
     user: Mapped["UserEntity"] = relationship("UserEntity")
     chatbot: Mapped["ChatbotEntity"] = relationship("ChatbotEntity")
     messages: Mapped[list["MessageEntity"]] = relationship(
-        "MessageEntity", back_populates="thread"
+        "MessageEntity", back_populates="thread", cascade="all, delete-orphan"
     )
     artifacts: Mapped[list["ArtifactEntity"]] = relationship(
-        "ArtifactEntity", back_populates="thread"
+        "ArtifactEntity", back_populates="thread", cascade="all, delete-orphan"
     )
