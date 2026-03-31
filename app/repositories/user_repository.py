@@ -344,13 +344,20 @@ def get_report_group_sets_by_ids_and_org(
 
 
 def replace_user_report_group_set_accesses(
-    db: Session, user_id: int, group_set_ids: List[int]
+    db: Session, user_id: int, org_id: int, group_set_ids: List[int]
 ) -> None:
-    """刪除該 user 原有的 report_group_set_accesses，並新增新的"""
-    # 刪除該 user 所有現有的 accesses
+    """刪除該 user 在指定 org 的 report_group_set_accesses，並批量新增新的"""
+    # 找出該 org 下所有 group_set_id 的子查詢
+    subquery = select(ReportGroupSetEntity.id).where(
+        ReportGroupSetEntity.org_id == org_id
+    )
+    # 刪除該 user + org 的現有 accesses
     db.execute(
         delete(UserReportGroupSetAccessEntity).where(
-            UserReportGroupSetAccessEntity.user_id == user_id
+            and_(
+                UserReportGroupSetAccessEntity.user_id == user_id,
+                UserReportGroupSetAccessEntity.report_group_set_id.in_(subquery),
+            )
         )
     )
 

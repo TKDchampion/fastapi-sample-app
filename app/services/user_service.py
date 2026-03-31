@@ -105,7 +105,7 @@ def set_user_report_group_sets(
 
     # 執行取代
     user_repository.replace_user_report_group_set_accesses(
-        db, target_user_id, group_set_ids
+        db, target_user_id, org_id, group_set_ids
     )
 
     return TextResponseDTO(
