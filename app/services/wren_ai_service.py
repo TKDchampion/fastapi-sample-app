@@ -526,29 +526,62 @@ class WrenAiService(BaseHTTPService):
         return result
 
     async def download_table(self, query: str):
-        count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"
-        count_result = client.query(count_query).result()
-        total_rows = list(count_result)[0].total_rows
         limit = 10000
-        if total_rows > limit:
+        normalized_query = query.strip().rstrip(";")
+
+        safe_query = f"""
+        SELECT *
+        FROM ({normalized_query}) AS sub
+        LIMIT {limit + 1}
+        """
+
+        result = client.query(safe_query).result()
+        rows = list(result)
+
+        if len(rows) > limit:
             return JSONResponse(
                 content={
-                    "message": "The query returns too many rows to download (limit: 10,000).",
-                    "total_rows": total_rows,
+                    "message": f"The query returns too many rows to download (limit: {limit}).",
+                    "total_rows": f">{limit}",
                 },
                 status_code=200,
             )
-
-        validate_query = validate_sql(query, limit)
-        result = client.query(validate_query).result()
 
         with tempfile.NamedTemporaryFile(
             delete=False, suffix=".csv", mode="w", newline="", encoding="utf-8"
         ) as tmpfile:
             writer = csv.writer(tmpfile)
             writer.writerow([field.name for field in result.schema])
-            for row in result:
+            for row in rows:
                 writer.writerow(list(row.values()))
             tmpfile_path = tmpfile.name
 
         return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
+
+    # async def download_table(self, query: str):
+    #     count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"
+    #     count_result = client.query(count_query).result()
+    #     total_rows = list(count_result)[0].total_rows
+    #     limit = 10000
+    #     if total_rows > limit:
+    #         return JSONResponse(
+    #             content={
+    #                 "message": "The query returns too many rows to download (limit: 10,000).",
+    #                 "total_rows": total_rows,
+    #             },
+    #             status_code=200,
+    #         )
+
+    #     validate_query = validate_sql(query, limit)
+    #     result = client.query(validate_query).result()
+
+    #     with tempfile.NamedTemporaryFile(
+    #         delete=False, suffix=".csv", mode="w", newline="", encoding="utf-8"
+    #     ) as tmpfile:
+    #         writer = csv.writer(tmpfile)
+    #         writer.writerow([field.name for field in result.schema])
+    #         for row in result:
+    #             writer.writerow(list(row.values()))
+    #         tmpfile_path = tmpfile.name
+
+    #     return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
