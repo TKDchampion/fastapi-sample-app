@@ -61,7 +61,7 @@ app.add_middleware(
     ],
     # allow_origins=["*"],
     allow_credentials=True,  # Cookie
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
     max_age=3600,  # cache time(seconds)
 )
