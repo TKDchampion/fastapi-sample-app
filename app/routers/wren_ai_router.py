@@ -1,7 +1,7 @@
 import logging
 import uuid
 from typing import Literal, Optional
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, File, Query, Response, UploadFile
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
@@ -11,6 +11,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     AskRequestDTO,
     AskResponse,
+    ChatbotCsvReadDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
@@ -213,6 +214,23 @@ async def run_chart_endpoint(
     db: Session = Depends(get_db),
 ):
     return await service.run_chart("generate_vega_chart", request_dto, db, user_info)
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/csv",
+    response_model=ChatbotCsvReadDTO,
+    status_code=201,
+)
+@router_try()
+def upload_csv_endpoint(
+    si_id: int,
+    org_id: int,
+    file: UploadFile = File(...),
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.upload_csv(db, user_info, si_id, org_id, file)
 
 
 @router.post(
