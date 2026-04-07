@@ -13,4 +13,5 @@ from .chatbot_entity import ChatbotEntity
 from .thread_entity import ThreadEntity
 from .message_entity import MessageEntity, MessageRole, MessageContentType, MessageStatus
 from .artifact_entity import ArtifactEntity, ArtifactType
+from .chatbot_csv_entity import ChatbotCsvEntity
 from . import associations_entity
