@@ -11,7 +11,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     AskRequestDTO,
     AskResponse,
-    ChatbotCsvReadDTO,
+    CsvUploadResponseDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
@@ -218,7 +218,7 @@ async def run_chart_endpoint(
 
 @router.post(
     "/si/{si_id}/org/{org_id}/csv",
-    response_model=ChatbotCsvReadDTO,
+    response_model=CsvUploadResponseDTO,
     status_code=201,
 )
 @router_try()

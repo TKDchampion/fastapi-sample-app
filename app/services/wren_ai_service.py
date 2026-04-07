@@ -20,7 +20,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     ArtifactSummaryDTO,
     AskRequestDTO,
-    ChatbotCsvReadDTO,
+    CsvUploadResponseDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
@@ -43,7 +43,6 @@ from app.entities.message_entity import MessageContentType, MessageRole, Message
 from app.repositories import (
     artifact_repository,
     chatbot_repository,
-    chatbot_csv_repository,
     message_repository,
     thread_repository,
 )
@@ -536,22 +535,12 @@ class WrenAiService(BaseHTTPService):
         si_id: int,
         org_id: int,
         file: UploadFile,
-    ) -> ChatbotCsvReadDTO:
-        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+    ) -> CsvUploadResponseDTO:
+        self._verify_and_get_chatbot(db, user, si_id, org_id)
         gcs_url = upload_csv_to_gcs(file)
-        record = chatbot_csv_repository.create_csv_record(
-            db=db,
-            chatbot_id=chatbot.id,
+        return CsvUploadResponseDTO(
             gcs_url=gcs_url,
             original_filename=file.filename,
-        )
-        db.commit()
-        return ChatbotCsvReadDTO(
-            id=record.id,
-            chatbot_id=record.chatbot_id,
-            gcs_url=record.gcs_url,
-            original_filename=record.original_filename,
-            created_at=record.created_at,
         )
 
     async def download_table(self, query: str):

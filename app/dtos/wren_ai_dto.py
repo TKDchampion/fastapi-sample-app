@@ -288,3 +288,8 @@ class ChatbotCsvReadDTO(BaseModel):
     gcs_url: str
     original_filename: str
     created_at: datetime
+
+
+class CsvUploadResponseDTO(BaseModel):
+    gcs_url: str
+    original_filename: str
