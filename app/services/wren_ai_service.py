@@ -4,6 +4,7 @@ import os
 import tempfile
 import uuid
 from typing import AsyncIterator, Optional
+from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     ArtifactSummaryDTO,
     AskRequestDTO,
+    ChatbotCsvReadDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
@@ -41,10 +43,12 @@ from app.entities.message_entity import MessageContentType, MessageRole, Message
 from app.repositories import (
     artifact_repository,
     chatbot_repository,
+    chatbot_csv_repository,
     message_repository,
     thread_repository,
 )
 from app.services.base_http_service import BaseHTTPService
+from app.services.gcs_uploader import upload_csv_to_gcs
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
@@ -524,6 +528,31 @@ class WrenAiService(BaseHTTPService):
             )
 
         return result
+
+    def upload_csv(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        file: UploadFile,
+    ) -> ChatbotCsvReadDTO:
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+        gcs_url = upload_csv_to_gcs(file)
+        record = chatbot_csv_repository.create_csv_record(
+            db=db,
+            chatbot_id=chatbot.id,
+            gcs_url=gcs_url,
+            original_filename=file.filename,
+        )
+        db.commit()
+        return ChatbotCsvReadDTO(
+            id=record.id,
+            chatbot_id=record.chatbot_id,
+            gcs_url=record.gcs_url,
+            original_filename=record.original_filename,
+            created_at=record.created_at,
+        )
 
     async def download_table(self, query: str):
         limit = 10000
