@@ -36,6 +36,7 @@ from app.dtos.wren_ai_dto import (
     ThreadPageDTO,
     ThreadReadDTO,
     ThreadSummaryDTO,
+    WrenSetupResponseDTO,
 )
 from app.domain.exception.domain_exception import DomainException
 from app.entities.artifact_entity import ArtifactType
@@ -48,6 +49,7 @@ from app.repositories import (
 )
 from app.services.base_http_service import BaseHTTPService
 from app.services.gcs_uploader import upload_csv_to_gcs
+from app.services.wren_cloud_service import WrenCloudService
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
@@ -575,6 +577,40 @@ class WrenAiService(BaseHTTPService):
             tmpfile_path = tmpfile.name
 
         return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
+
+    async def setup_wren_for_org(
+        self, db: Session, org_id: int
+    ) -> WrenSetupResponseDTO:
+        cloud = WrenCloudService()
+
+        # 步驟一：建立 Wren Project
+        project = await cloud.create_project(org_id)
+
+        # 步驟二：建立 API Key（前者成功才執行）
+        api_key = await cloud.create_api_key(project.id, org_id)
+
+        # 步驟三：upsert chatbot 記錄
+        chatbot, is_new = chatbot_repository.upsert_chatbot(
+            db,
+            org_id=org_id,
+            name=cloud.display_name(org_id),
+            wren_project_id=str(project.id),
+            wren_key=api_key.secret,
+        )
+
+        warning = (
+            None
+            if is_new
+            else "Chatbot already exists for this org. Existing credentials have been overwritten."
+        )
+
+        return WrenSetupResponseDTO(
+            id=chatbot.id,
+            name=chatbot.name,
+            org_id=chatbot.org_id,
+            wren_project_id=chatbot.wren_project_id,
+            warning=warning,
+        )
 
     # async def download_table(self, query: str):
     #     count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"
