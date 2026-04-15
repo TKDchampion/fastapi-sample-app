@@ -26,6 +26,7 @@ class TableauConnectedAppConfig:
     client_id: str
     secret_id: str
     secret_value: str
+    sub: str
 
 
 def _get_required_env(key: str) -> str:
@@ -66,6 +67,7 @@ def _get_connected_app_config(si_id: int) -> TableauConnectedAppConfig:
             secret_value=_get_required_env(
                 f"TABLEAU_{business_unit}_CONNECTED_APP_SECRET_VALUE"
             ),
+            sub=_get_required_env(f"TABLEAU_{business_unit}_SUB"),
         )
 
     raise DomainException("Tableau is not enabled for this SI", "no_access", 403)
@@ -79,8 +81,7 @@ def _create_token(
 
     payload = {
         "iss": config.client_id,
-        # "sub": user.email,
-        'sub':'tableau_bu2@kdanmobile.com',
+        "sub": config.sub,
         "aud": TABLEAU_JWT_AUDIENCE,
         "exp": int(expire.timestamp()),
         "iat": int(now.timestamp()),
