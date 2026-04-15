@@ -7,6 +7,7 @@ from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
 from app.database import get_db
 from app.dtos.user_dto import UserReadDTO
+from app.domain.access_tree.check_user_access import PermissionCheckParams
 from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     AskRequestDTO,
@@ -25,10 +26,12 @@ from app.dtos.wren_ai_dto import (
     MessageListResponseDTO,
     ThreadListResponseDTO,
     ThreadReadDTO,
+    WrenSetupResponseDTO,
 )
 from app.decorators.router_try import router_try
 from app.services.wren_ai_service import WrenAiService
 from app.services.jwt_service import token_required
+from app.services.permission_guard_service import verify_user_permission
 
 
 logger = logging.getLogger(__name__)
@@ -231,6 +234,27 @@ def upload_csv_endpoint(
     db: Session = Depends(get_db),
 ):
     return service.upload_csv(db, user_info, si_id, org_id, file)
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/setup",
+    response_model=WrenSetupResponseDTO,
+    status_code=201,
+)
+@router_try()
+async def setup_wren_for_org_endpoint(
+    si_id: int,
+    org_id: int,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    verify_user_permission(
+        db,
+        user_info,
+        PermissionCheckParams(si_id=si_id, org_id=org_id, perm="org.permission.edit"),
+    )
+    return await service.setup_wren_for_org(db, org_id)
 
 
 @router.post(
