@@ -36,6 +36,8 @@ from app.dtos.wren_ai_dto import (
     ThreadPageDTO,
     ThreadReadDTO,
     ThreadSummaryDTO,
+    WrenCloudKeyResponseDTO,
+    WrenCloudProjectResponseDTO,
     WrenSetupResponseDTO,
 )
 from app.domain.exception.domain_exception import DomainException
@@ -49,7 +51,6 @@ from app.repositories import (
 )
 from app.services.base_http_service import BaseHTTPService
 from app.services.gcs_uploader import upload_csv_to_gcs
-from app.services.wren_cloud_service import WrenCloudService
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
@@ -70,6 +71,42 @@ class WrenAiService(BaseHTTPService):
             default_base_url="http://localhost:8000",
             timeout=6000,
         )
+        self._cloud_token = os.getenv("WREN_TOKEN", "")
+        self._wren_org_id = os.getenv("WREN_ORG_ID", "")
+        self._app_env = os.getenv("APP_ENV", "development")
+        self._cloud_base_url = os.getenv("WREN_CLOUD_URL", "https://cloud.getwren.ai")
+
+    def _cloud_auth_headers(self) -> dict:
+        return {"Authorization": f"Bearer {self._cloud_token}"}
+
+    def _cloud_display_name(self, org_id: int) -> str:
+        prefix = "prod" if self._app_env == "production" else "dev"
+        return f"{prefix}_{org_id}"
+
+    async def _create_wren_project(self, org_id: int):
+        payload = {
+            "orgId": self._wren_org_id,
+            "displayName": self._cloud_display_name(org_id),
+            "language": "zh-TW",
+            "timezone": "Asia/Taipei",
+        }
+        result = await self.post(
+            path="/api/v1/projects",
+            payload=payload,
+            extra_headers=self._cloud_auth_headers(),
+            override_base_url=self._cloud_base_url,
+        )
+        return WrenCloudProjectResponseDTO(**result)
+
+    async def _create_wren_api_key(self, project_id: int | str, org_id: int):
+        payload = {"name": self._cloud_display_name(org_id)}
+        result = await self.post(
+            path=f"/api/v1/projects/{project_id}/keys",
+            payload=payload,
+            extra_headers=self._cloud_auth_headers(),
+            override_base_url=self._cloud_base_url,
+        )
+        return WrenCloudKeyResponseDTO(**result)
 
     def _verify_and_get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
@@ -579,21 +616,27 @@ class WrenAiService(BaseHTTPService):
         return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
 
     async def setup_wren_for_org(
-        self, db: Session, org_id: int
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int
     ) -> WrenSetupResponseDTO:
-        cloud = WrenCloudService()
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(
+                si_id=si_id, org_id=org_id, perm="org.permission.edit"
+            ),
+        )
 
         # 步驟一：建立 Wren Project
-        project = await cloud.create_project(org_id)
+        project = await self._create_wren_project(org_id)
 
         # 步驟二：建立 API Key（前者成功才執行）
-        api_key = await cloud.create_api_key(project.id, org_id)
+        api_key = await self._create_wren_api_key(project.id, org_id)
 
         # 步驟三：upsert chatbot 記錄
         chatbot, is_new = chatbot_repository.upsert_chatbot(
             db,
             org_id=org_id,
-            name=cloud.display_name(org_id),
+            name=self._cloud_display_name(org_id),
             wren_project_id=str(project.id),
             wren_key=api_key.secret,
         )
