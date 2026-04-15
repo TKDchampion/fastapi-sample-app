@@ -4,6 +4,7 @@ import os
 import tempfile
 import uuid
 from typing import AsyncIterator, Optional
+from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     ArtifactSummaryDTO,
     AskRequestDTO,
+    CsvUploadResponseDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
@@ -45,6 +47,7 @@ from app.repositories import (
     thread_repository,
 )
 from app.services.base_http_service import BaseHTTPService
+from app.services.gcs_uploader import upload_csv_to_gcs
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
@@ -524,6 +527,21 @@ class WrenAiService(BaseHTTPService):
             )
 
         return result
+
+    def upload_csv(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        file: UploadFile,
+    ) -> CsvUploadResponseDTO:
+        self._verify_and_get_chatbot(db, user, si_id, org_id)
+        gcs_url = upload_csv_to_gcs(file)
+        return CsvUploadResponseDTO(
+            gcs_url=gcs_url,
+            original_filename=file.filename,
+        )
 
     async def download_table(self, query: str):
         limit = 10000

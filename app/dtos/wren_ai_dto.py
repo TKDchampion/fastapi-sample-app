@@ -280,3 +280,16 @@ class ThreadListResponseDTO(BaseModel):
 
 class RenameThreadRequestDTO(BaseModel):
     title: str = Field(..., description="New thread title")
+
+
+class ChatbotCsvReadDTO(BaseModel):
+    id: int
+    chatbot_id: int
+    gcs_url: str
+    original_filename: str
+    created_at: datetime
+
+
+class CsvUploadResponseDTO(BaseModel):
+    gcs_url: str
+    original_filename: str
