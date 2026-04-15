@@ -293,3 +293,24 @@ class ChatbotCsvReadDTO(BaseModel):
 class CsvUploadResponseDTO(BaseModel):
     gcs_url: str
     original_filename: str
+
+
+class WrenCloudProjectResponseDTO(BaseModel):
+    id: Any
+    displayName: str
+
+
+class WrenCloudKeyResponseDTO(BaseModel):
+    id: int
+    name: str
+    secret: str
+    projectId: Any
+    createdAt: str
+
+
+class WrenSetupResponseDTO(BaseModel):
+    id: int
+    name: str
+    org_id: int
+    wren_project_id: str
+    warning: Optional[str] = None
