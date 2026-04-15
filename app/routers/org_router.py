@@ -14,7 +14,9 @@ from app.dtos.org_dto import (
     OrgListResponseDTO,
 )
 from app.dtos.report_dto import OrgSidebarResponseDTO
+from app.dtos.tableau_dto import TableauTokenResponseDTO
 from app.services import org_service
+from app.services.tableau_service import issue_tableau_token
 from app.dtos.user_dto import (
     UserReadDTO,
 )
@@ -152,3 +154,20 @@ def get_org_sidebar(
     Returns report groups accessible by the current user and business modules of the org.
     """
     return org_service.get_org_sidebar(db, si_id, org_id, user_info)
+
+
+@si_router.post(
+    "/{si_id}/org/{org_id}/tableau",
+    response_model=TableauTokenResponseDTO,
+)
+@router_try()
+def get_tableau_token(
+    si_id: int,
+    org_id: int,
+    db: Session = Depends(get_db),
+    user_info: UserReadDTO = Depends(token_required),
+) -> TableauTokenResponseDTO:
+    """
+    Issue a Tableau JWT for the current user after org/report access verification.
+    """
+    return issue_tableau_token(db, si_id, org_id, user_info)
