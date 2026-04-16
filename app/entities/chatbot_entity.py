@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from sqlalchemy import String, ForeignKey, DateTime, func, Index
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -15,6 +16,9 @@ class ChatbotEntity(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     wren_key: Mapped[str] = mapped_column(String(255), nullable=False)
     wren_project_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    wren_models: Mapped[list] = mapped_column(
+        JSONB, nullable=True, default=list, server_default="[]"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
