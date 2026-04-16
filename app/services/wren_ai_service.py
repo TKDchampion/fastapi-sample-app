@@ -45,6 +45,7 @@ from app.entities.artifact_entity import ArtifactType
 from app.entities.message_entity import MessageContentType, MessageRole, MessageStatus
 from app.repositories import (
     artifact_repository,
+    chatbot_csv_repository,
     chatbot_repository,
     message_repository,
     thread_repository,
@@ -575,8 +576,15 @@ class WrenAiService(BaseHTTPService):
         org_id: int,
         file: UploadFile,
     ) -> CsvUploadResponseDTO:
-        self._verify_and_get_chatbot(db, user, si_id, org_id)
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
         gcs_url = upload_csv_to_gcs(file)
+        chatbot_csv_repository.create_csv_record(
+            db=db,
+            chatbot_id=chatbot.id,
+            gcs_url=gcs_url,
+            original_filename=file.filename,
+        )
+        db.commit()
         return CsvUploadResponseDTO(
             gcs_url=gcs_url,
             original_filename=file.filename,
