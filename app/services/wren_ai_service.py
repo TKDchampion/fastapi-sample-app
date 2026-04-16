@@ -87,7 +87,7 @@ class WrenAiService(BaseHTTPService):
         payload = {
             "orgId": self._wren_org_id,
             "displayName": self._cloud_display_name(org_id),
-            "language": "zh-TW",
+            "language": "ZH_TW",
             "timezone": "Asia/Taipei",
         }
         result = await self.post(
@@ -618,6 +618,13 @@ class WrenAiService(BaseHTTPService):
     async def setup_wren_for_org(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
     ) -> WrenSetupResponseDTO:
+        if chatbot_repository.get_chatbot_by_org_id(db, org_id):
+            raise DomainException(
+                msg="Chatbot already exists for this organization",
+                type="chatbot_already_exists",
+                code=409,
+            )
+
         verify_user_permission(
             db,
             user,
@@ -630,29 +637,24 @@ class WrenAiService(BaseHTTPService):
         project = await self._create_wren_project(org_id)
 
         # 步驟二：建立 API Key（前者成功才執行）
-        api_key = await self._create_wren_api_key(project.id, org_id)
+        api_key = await self._create_wren_api_key(project.project.id, org_id)
 
-        # 步驟三：upsert chatbot 記錄
-        chatbot, is_new = chatbot_repository.upsert_chatbot(
+        # 步驟三：建立 chatbot 記錄
+        chatbot, _ = chatbot_repository.upsert_chatbot(
             db,
             org_id=org_id,
             name=self._cloud_display_name(org_id),
-            wren_project_id=str(project.id),
+            wren_project_id=str(project.project.id),
             wren_key=api_key.secret,
         )
-
-        warning = (
-            None
-            if is_new
-            else "Chatbot already exists for this org. Existing credentials have been overwritten."
-        )
+        db.commit()
 
         return WrenSetupResponseDTO(
             id=chatbot.id,
             name=chatbot.name,
             org_id=chatbot.org_id,
             wren_project_id=chatbot.wren_project_id,
-            warning=warning,
+            wren_api_key=api_key.secret,
         )
 
     # async def download_table(self, query: str):

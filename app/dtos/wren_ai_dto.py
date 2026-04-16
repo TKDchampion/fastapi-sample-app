@@ -295,9 +295,20 @@ class CsvUploadResponseDTO(BaseModel):
     original_filename: str
 
 
-class WrenCloudProjectResponseDTO(BaseModel):
-    id: Any
+class WrenCloudProjectDTO(BaseModel):
+    id: int
+    type: Optional[str] = None
     displayName: str
+    createdAt: datetime
+    updatedAt: datetime
+    connectionInfo: Any | None = None
+    language: str
+    timezone: str
+
+
+class WrenCloudProjectResponseDTO(BaseModel):
+    project: WrenCloudProjectDTO
+    status: str
 
 
 class WrenCloudKeyResponseDTO(BaseModel):
@@ -313,4 +324,4 @@ class WrenSetupResponseDTO(BaseModel):
     name: str
     org_id: int
     wren_project_id: str
-    warning: Optional[str] = None
+    wren_api_key: str
