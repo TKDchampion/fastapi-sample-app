@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple
 from google.api_core.exceptions import GoogleAPIError
 from app.domain.exception.domain_exception import DomainException
+from app.domain.csv_validator.validator import validate_csv_file
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 ORG_LOGO_FOLDER = "org_logos"
@@ -63,16 +64,17 @@ def upload_csv_to_gcs(file: UploadFile) -> str:
     """
     Upload CSV file to GCS and return public URL.
 
+    驗證規則：
+    - 檔名必須為 google_ads_template.csv 或 meta_ads_template.csv
+    - CSV 欄位必須完全符合對應 template 的規格
+
     Example returned URL:
       https://storage.googleapis.com/adnex-bi/chatbot/csv_files/20260407/uuid.csv
     """
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext != "csv":
-        raise DomainException(
-            msg="Only .csv files are allowed",
-            type="invalid_file_type",
-            code=400,
-        )
+    # 讀取內容以進行驗證（之後用 BytesIO 上傳，避免重新讀取）
+    content_bytes = file.file.read()
+
+    validate_csv_file(file.filename, content_bytes)
 
     try:
         storage_client = storage.Client()
@@ -80,7 +82,7 @@ def upload_csv_to_gcs(file: UploadFile) -> str:
 
         blob_name = f"{CHATBOT_CSV_FOLDER}/{datetime.now(timezone.utc).strftime('%Y%m%d')}/{uuid4()}.csv"
         blob = bucket.blob(blob_name)
-        blob.upload_from_file(file.file, content_type="text/csv")
+        blob.upload_from_file(io.BytesIO(content_bytes), content_type="text/csv")
 
         public_url = f"https://storage.googleapis.com/{BUCKET_NAME}/{blob_name}"
         return public_url
