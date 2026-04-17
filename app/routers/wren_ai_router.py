@@ -15,6 +15,7 @@ from app.dtos.wren_ai_dto import (
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
+    DownloadCsvTemplateRequestDTO,
     GenerateSQLRequestDTO,
     GenerateSQLResponseDTO,
     QueryTableMessageResponseDTO,
@@ -248,6 +249,38 @@ async def setup_wren_for_org_endpoint(
     db: Session = Depends(get_db),
 ):
     return await service.setup_wren_for_org(db, user_info, si_id, org_id)
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/download_csv_template",
+    response_class=Response,
+    responses={
+        200: {
+            "content": {
+                "text/csv": {"schema": {"type": "string", "format": "binary"}},
+                "application/zip": {"schema": {"type": "string", "format": "binary"}},
+            },
+            "description": "Returns a single CSV file or a ZIP archive when multiple types are requested.",
+        }
+    },
+)
+@router_try()
+def download_csv_template_endpoint(
+    si_id: int,
+    org_id: int,
+    body: DownloadCsvTemplateRequestDTO,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+) -> Response:
+    content, content_type, filename = service.download_csv_template(
+        db, user_info, si_id, org_id, body.types
+    )
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post(

@@ -1,15 +1,24 @@
+import io
 import logging
 import os
+import zipfile
 from fastapi import HTTPException, UploadFile
 from google.cloud import storage
 from uuid import uuid4
 from datetime import datetime, timezone
+from typing import List, Tuple
 from google.api_core.exceptions import GoogleAPIError
 from app.domain.exception.domain_exception import DomainException
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 ORG_LOGO_FOLDER = "org_logos"
 CHATBOT_CSV_FOLDER = "chatbot/csv_files"
+CSV_TEMPLATE_FOLDER = "chatbot/csv_template"
+
+CSV_TEMPLATE_BLOB_MAP: dict = {
+    "google_ads": f"{CSV_TEMPLATE_FOLDER}/google_ads_template.csv",
+    "meta_ads": f"{CSV_TEMPLATE_FOLDER}/meta_ads_template.csv",
+}
 
 
 logger = logging.getLogger(__name__)
@@ -92,5 +101,55 @@ def upload_csv_to_gcs(file: UploadFile) -> str:
         raise DomainException(
             msg=f"Unexpected error: {str(e)}",
             type="upload_error",
+            code=500,
+        )
+
+
+def download_csv_templates_from_gcs(types: List[str]) -> Tuple[bytes, str, str]:
+    """
+    Download CSV template files from GCS.
+
+    Returns:
+        (content_bytes, content_type, filename)
+        - Single type: returns raw CSV bytes with text/csv
+        - Multiple types: returns ZIP bytes with application/zip
+    """
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(BUCKET_NAME)
+
+        if len(types) == 1:
+            blob_path = CSV_TEMPLATE_BLOB_MAP[types[0]]
+            blob = bucket.blob(blob_path)
+            content = blob.download_as_bytes()
+            filename = f"{types[0]}_template.csv"
+            return content, "text/csv", filename
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(
+            zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as zf:
+            for t in types:
+                blob_path = CSV_TEMPLATE_BLOB_MAP[t]
+                blob = bucket.blob(blob_path)
+                content = blob.download_as_bytes()
+                zf.writestr(f"{t}_template.csv", content)
+
+        zip_buffer.seek(0)
+        return zip_buffer.read(), "application/zip", "csv_templates.zip"
+
+    except GoogleAPIError as e:
+        logger.error("GCS API error during template download: %s", e, exc_info=True)
+        raise DomainException(
+            msg=f"GCS download failed: {str(e)}",
+            type="gcs_error",
+            code=502,
+        )
+
+    except Exception as e:
+        logger.error("Unexpected error during template download: %s", e, exc_info=True)
+        raise DomainException(
+            msg=f"Unexpected error: {str(e)}",
+            type="download_error",
             code=500,
         )

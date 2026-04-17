@@ -51,7 +51,7 @@ from app.repositories import (
     thread_repository,
 )
 from app.services.base_http_service import BaseHTTPService
-from app.services.gcs_uploader import upload_csv_to_gcs
+from app.services.gcs_uploader import download_csv_templates_from_gcs, upload_csv_to_gcs
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
@@ -589,6 +589,23 @@ class WrenAiService(BaseHTTPService):
             gcs_url=gcs_url,
             original_filename=file.filename,
         )
+
+    def download_csv_template(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        types: list,
+    ) -> tuple:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(
+                si_id=si_id, org_id=org_id, perm="org.permission.edit"
+            ),
+        )
+        return download_csv_templates_from_gcs([t.value for t in types])
 
     async def download_table(self, query: str):
         limit = 10000

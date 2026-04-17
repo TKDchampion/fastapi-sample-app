@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, List, Literal, Optional
 from pydantic import BaseModel, Field, model_validator
 
@@ -325,3 +326,14 @@ class WrenSetupResponseDTO(BaseModel):
     org_id: int
     wren_project_id: str
     wren_api_key: str
+
+
+class CsvTemplateType(str, Enum):
+    GOOGLE_ADS = "google_ads"
+    META_ADS = "meta_ads"
+
+
+class DownloadCsvTemplateRequestDTO(BaseModel):
+    types: List[CsvTemplateType] = Field(
+        ..., min_length=1, description="CSV template types to download"
+    )
