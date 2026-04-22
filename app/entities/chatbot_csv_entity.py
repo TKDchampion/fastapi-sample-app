@@ -14,6 +14,7 @@ class ChatbotCsvEntity(Base):
     )
     gcs_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_success: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

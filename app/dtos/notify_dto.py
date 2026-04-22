@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -43,3 +43,21 @@ class DeleteAlertRequestDTO(BaseModel):
 class DeleteAlertResponseDTO(BaseModel):
     delete_count: int
     message: str
+
+
+class SyncIngestionTableInfoDTO(BaseModel):
+    table_name: str
+    gcs_uri: str
+
+
+class SyncIngestionRequestDTO(BaseModel):
+    table_info: List[SyncIngestionTableInfoDTO]
+    models: List[str]
+    project_name: str
+
+
+class SyncIngestionResponseDTO(BaseModel):
+    success_table_names: List[str]
+    dataset_id: str
+    status: str
+    success_count: int

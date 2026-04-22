@@ -36,22 +36,37 @@ from app.dtos.wren_ai_dto import (
     ThreadPageDTO,
     ThreadReadDTO,
     ThreadSummaryDTO,
+    UpsertModelResponseDTO,
+    WrenCloudKeyResponseDTO,
+    WrenCloudProjectResponseDTO,
+    WrenSetupResponseDTO,
 )
 from app.domain.exception.domain_exception import DomainException
 from app.entities.artifact_entity import ArtifactType
 from app.entities.message_entity import MessageContentType, MessageRole, MessageStatus
 from app.repositories import (
     artifact_repository,
+    chatbot_csv_repository,
     chatbot_repository,
     message_repository,
     thread_repository,
 )
 from app.services.base_http_service import BaseHTTPService
-from app.services.gcs_uploader import upload_csv_to_gcs
+from app.dtos.notify_dto import SyncIngestionRequestDTO, SyncIngestionTableInfoDTO
+from app.services.gcs_uploader import download_csv_templates_from_gcs, upload_csv_to_gcs
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
 import base64
+
+
+def _to_gs_uri(https_url: str) -> str:
+    """Convert https://storage.googleapis.com/{bucket}/{blob} to gs://{bucket}/{blob}."""
+    prefix = "https://storage.googleapis.com/"
+    if https_url.startswith(prefix):
+        return "gs://" + https_url[len(prefix) :]
+    return https_url
+
 
 raw = os.environ["BQ_SERVICE_ACCOUNT_KEY"]
 decoded = base64.b64decode(raw).decode("utf-8")
@@ -68,6 +83,42 @@ class WrenAiService(BaseHTTPService):
             default_base_url="http://localhost:8000",
             timeout=6000,
         )
+        self._cloud_token = os.getenv("WREN_TOKEN", "")
+        self._wren_org_id = os.getenv("WREN_ORG_ID", "")
+        self._app_env = os.getenv("APP_ENV", "development")
+        self._cloud_base_url = os.getenv("WREN_CLOUD_URL", "https://cloud.getwren.ai")
+
+    def _cloud_auth_headers(self) -> dict:
+        return {"Authorization": f"Bearer {self._cloud_token}"}
+
+    def _cloud_display_name(self, org_id: int) -> str:
+        prefix = "prod" if self._app_env == "production" else "dev"
+        return f"{prefix}_{org_id}"
+
+    async def _create_wren_project(self, org_id: int):
+        payload = {
+            "orgId": self._wren_org_id,
+            "displayName": self._cloud_display_name(org_id),
+            "language": "ZH_TW",
+            "timezone": "Asia/Taipei",
+        }
+        result = await self.post(
+            path="/api/v1/projects",
+            payload=payload,
+            extra_headers=self._cloud_auth_headers(),
+            override_base_url=self._cloud_base_url,
+        )
+        return WrenCloudProjectResponseDTO(**result)
+
+    async def _create_wren_api_key(self, project_id: int | str, org_id: int):
+        payload = {"name": self._cloud_display_name(org_id)}
+        result = await self.post(
+            path=f"/api/v1/projects/{project_id}/keys",
+            payload=payload,
+            extra_headers=self._cloud_auth_headers(),
+            override_base_url=self._cloud_base_url,
+        )
+        return WrenCloudKeyResponseDTO(**result)
 
     def _verify_and_get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
@@ -536,12 +587,36 @@ class WrenAiService(BaseHTTPService):
         org_id: int,
         file: UploadFile,
     ) -> CsvUploadResponseDTO:
-        self._verify_and_get_chatbot(db, user, si_id, org_id)
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
         gcs_url = upload_csv_to_gcs(file)
+        chatbot_csv_repository.create_csv_record(
+            db=db,
+            chatbot_id=chatbot.id,
+            gcs_url=gcs_url,
+            original_filename=file.filename,
+        )
+        db.commit()
         return CsvUploadResponseDTO(
             gcs_url=gcs_url,
             original_filename=file.filename,
         )
+
+    def download_csv_template(
+        self,
+        db: Session,
+        user: UserReadDTO,
+        si_id: int,
+        org_id: int,
+        types: list,
+    ) -> tuple:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(
+                si_id=si_id, org_id=org_id, perm="org.permission.edit"
+            ),
+        )
+        return download_csv_templates_from_gcs([t.value for t in types])
 
     async def download_table(self, query: str):
         limit = 10000
@@ -575,6 +650,85 @@ class WrenAiService(BaseHTTPService):
             tmpfile_path = tmpfile.name
 
         return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
+
+    async def upsert_model(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int, token: str
+    ) -> UpsertModelResponseDTO:
+        from app.services.notify_service import notify_service
+
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+        csvs = chatbot_csv_repository.get_latest_failed_csvs_by_chatbot_id(db, chatbot.id)
+
+        table_info = [
+            SyncIngestionTableInfoDTO(
+                table_name=os.path.splitext(csv.original_filename)[0],
+                gcs_uri=_to_gs_uri(csv.gcs_url),
+            )
+            for csv in csvs
+        ]
+
+        body = SyncIngestionRequestDTO(
+            table_info=table_info,
+            models=chatbot.wren_models or [],
+            project_name=chatbot.name,
+        )
+
+        print("SYNC_INGESTION_REQUEST_BODY:", body.json())
+
+        result = await notify_service.sync_ingestion(org_id=org_id, body=body, token=token)
+
+        # 成功：更新 chatbot.wren_models 與對應 CSV 的 is_success
+        chatbot_repository.update_wren_models(
+            db, chatbot.id, result.success_table_names
+        )
+        chatbot_csv_repository.mark_csvs_success(
+            db, chatbot.id, set(result.success_table_names)
+        )
+        db.commit()
+
+        return UpsertModelResponseDTO(**result.model_dump())
+
+    async def setup_wren_for_org(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int
+    ) -> WrenSetupResponseDTO:
+        if chatbot_repository.get_chatbot_by_org_id(db, org_id):
+            raise DomainException(
+                msg="Chatbot already exists for this organization",
+                type="chatbot_already_exists",
+                code=409,
+            )
+
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(
+                si_id=si_id, org_id=org_id, perm="org.permission.edit"
+            ),
+        )
+
+        # 步驟一：建立 Wren Project
+        project = await self._create_wren_project(org_id)
+
+        # 步驟二：建立 API Key（前者成功才執行）
+        api_key = await self._create_wren_api_key(project.project.id, org_id)
+
+        # 步驟三：建立 chatbot 記錄
+        chatbot, _ = chatbot_repository.upsert_chatbot(
+            db,
+            org_id=org_id,
+            name=self._cloud_display_name(org_id),
+            wren_project_id=str(project.project.id),
+            wren_key=api_key.secret,
+        )
+        db.commit()
+
+        return WrenSetupResponseDTO(
+            id=chatbot.id,
+            name=chatbot.name,
+            org_id=chatbot.org_id,
+            wren_project_id=chatbot.wren_project_id,
+            wren_api_key=api_key.secret,
+        )
 
     # async def download_table(self, query: str):
     #     count_query = f"SELECT COUNT(*) as total_rows FROM ({query})"

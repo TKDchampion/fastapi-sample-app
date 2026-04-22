@@ -1,7 +1,7 @@
 import logging
 import uuid
 from typing import Literal, Optional
-from fastapi import APIRouter, File, Query, Response, UploadFile
+from fastapi import APIRouter, File, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
@@ -15,6 +15,7 @@ from app.dtos.wren_ai_dto import (
     ChatbotReadDTO,
     ChartRequestDTO,
     ChartResponseDTO,
+    DownloadCsvTemplateRequestDTO,
     GenerateSQLRequestDTO,
     GenerateSQLResponseDTO,
     QueryTableMessageResponseDTO,
@@ -25,6 +26,8 @@ from app.dtos.wren_ai_dto import (
     MessageListResponseDTO,
     ThreadListResponseDTO,
     ThreadReadDTO,
+    UpsertModelResponseDTO,
+    WrenSetupResponseDTO,
 )
 from app.decorators.router_try import router_try
 from app.services.wren_ai_service import WrenAiService
@@ -217,7 +220,7 @@ async def run_chart_endpoint(
 
 
 @router.post(
-    "/si/{si_id}/org/{org_id}/csv",
+    "/si/{si_id}/org/{org_id}/upload_csv",
     response_model=CsvUploadResponseDTO,
     status_code=201,
 )
@@ -231,6 +234,71 @@ def upload_csv_endpoint(
     db: Session = Depends(get_db),
 ):
     return service.upload_csv(db, user_info, si_id, org_id, file)
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/create_wren_ai",
+    response_model=WrenSetupResponseDTO,
+    status_code=201,
+)
+@router_try()
+async def setup_wren_for_org_endpoint(
+    si_id: int,
+    org_id: int,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return await service.setup_wren_for_org(db, user_info, si_id, org_id)
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/download_csv_template",
+    response_class=Response,
+    responses={
+        200: {
+            "content": {
+                "text/csv": {"schema": {"type": "string", "format": "binary"}},
+                "application/zip": {"schema": {"type": "string", "format": "binary"}},
+            },
+            "description": "Returns a single CSV file or a ZIP archive when multiple types are requested.",
+        }
+    },
+)
+@router_try()
+def download_csv_template_endpoint(
+    si_id: int,
+    org_id: int,
+    body: DownloadCsvTemplateRequestDTO,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+) -> Response:
+    content, content_type, filename = service.download_csv_template(
+        db, user_info, si_id, org_id, body.types
+    )
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/upsert_model",
+    response_model=UpsertModelResponseDTO,
+)
+@router_try()
+async def upsert_model_endpoint(
+    si_id: int,
+    org_id: int,
+    request: Request,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+) -> UpsertModelResponseDTO:
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    return await service.upsert_model(db, user_info, si_id, org_id, token)
 
 
 @router.post(
