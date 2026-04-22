@@ -17,45 +17,46 @@ ALLOWED_FILENAMES = {"google_ads_template.csv", "meta_ads_template.csv"}
 
 # ── Pydantic 行模型（同時作為欄位規格文件） ──────────────────────────────────
 
+
 class GoogleAdsRow(BaseModel):
     """Google Ads template 每列的欄位規格。"""
 
-    date: str                       # 廣告日期 YYYY-mm-dd
-    account_id: str                 # 廣告帳號ID
-    campaign_name: str              # 廣告活動
-    ad_group_name: str              # 廣告群組
+    date: str  # 廣告日期 YYYY-mm-dd
+    account_id: str  # 廣告帳號ID
+    campaign_name: str  # 廣告活動
+    ad_group_name: str  # 廣告群組
     ad_id: str
-    image_ad_url: str               # 廣告圖片url
-    headline_multi_asset: str       # 廣告標題欄位
-    description_multi_asset: str    # 廣告說明欄位
-    video_title: str                # 影片標題（影音廣告）
-    video_url: str                  # 影片youtube連結（影音廣告）
-    ad_status_effective_status: str # 廣告狀態
-    impressions: int                # 曝光
-    video_views: int                # 廣告觀看數
-    clicks: int                     # 廣告點擊
-    cost: float                     # 廣告費用
-    conversions: float              # 轉換數
-    conversions_value: float        # 轉換價值
+    image_ad_url: str  # 廣告圖片url
+    headline_multi_asset: str  # 廣告標題欄位
+    description_multi_asset: str  # 廣告說明欄位
+    video_title: str  # 影片標題（影音廣告）
+    video_url: str  # 影片youtube連結（影音廣告）
+    ad_status_effective_status: str  # 廣告狀態
+    impressions: int  # 曝光
+    video_views: int  # 廣告觀看數
+    clicks: int  # 廣告點擊
+    cost: float  # 廣告費用
+    conversions: float  # 轉換數
+    conversions_value: float  # 轉換價值
 
 
 class MetaAdsRow(BaseModel):
     """Meta Ads template 每列的欄位規格。"""
 
-    date: str                       # 廣告日期 YYYY-mm-dd
-    account_id: str                 # 廣告帳號ID
-    campaign_name: str              # 廣告活動
-    ad_set_name: str                # 廣告組合
-    ad_name: str                    # 廣告名稱
-    ad_id: str                      # 廣告id
-    ad_image_url: str               # 廣告圖片url
-    ad_status: str                  # 廣告狀態
-    impressions: int                # 曝光
-    three_second_video_views: int   # 影音廣告觀看數
-    clicks: int                     # 廣告點擊
-    cost: float                     # 廣告費用
-    conversions: float              # 轉換數
-    conversions_value: float        # 轉換價值
+    date: str  # 廣告日期 YYYY-mm-dd
+    account_id: str  # 廣告帳號ID
+    campaign_name: str  # 廣告活動
+    ad_set_name: str  # 廣告組合
+    ad_name: str  # 廣告名稱
+    ad_id: str  # 廣告id
+    ad_image_url: str  # 廣告圖片url
+    ad_status: str  # 廣告狀態
+    impressions: int  # 曝光
+    three_second_video_views: int  # 影音廣告觀看數
+    clicks: int  # 廣告點擊
+    cost: float  # 廣告費用
+    conversions: float  # 轉換數
+    conversions_value: float  # 轉換價值
 
 
 # ── 檔名 → schema 對應表 ─────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ _FILENAME_SCHEMA_MAP: dict[str, Type[BaseModel]] = {
 
 
 # ── 共用驗證函式 ─────────────────────────────────────────────────────────────
+
 
 def validate_csv_file(filename: str, content_bytes: bytes) -> None:
     """
@@ -134,8 +136,6 @@ def _validate_columns(filename: str, content_bytes: bytes) -> None:
     # 跳過第 2～4 列（說明列），從第 5 列開始驗證型別
     stripped_headers = [h.strip() for h in raw_headers]
     for row_num, row in enumerate(reader, start=2):
-        if row_num < 5:
-            continue
         row_dict = dict(zip(stripped_headers, row))
         try:
             schema_cls.model_validate(row_dict)
