@@ -17,8 +17,8 @@ CHATBOT_CSV_FOLDER = "chatbot/csv_files"
 CSV_TEMPLATE_FOLDER = "chatbot/csv_template"
 
 CSV_TEMPLATE_BLOB_MAP: dict = {
-    "google_ads": f"{CSV_TEMPLATE_FOLDER}/google_ads_template.csv",
-    "meta_ads": f"{CSV_TEMPLATE_FOLDER}/meta_ads_template.csv",
+    "google_ads": f"{CSV_TEMPLATE_FOLDER}/google_ads.csv",
+    "meta_ads": f"{CSV_TEMPLATE_FOLDER}/meta_ads.csv",
 }
 
 
@@ -65,7 +65,7 @@ def upload_csv_to_gcs(file: UploadFile) -> str:
     Upload CSV file to GCS and return public URL.
 
     驗證規則：
-    - 檔名必須為 google_ads_template.csv 或 meta_ads_template.csv
+    - 檔名必須為 google_ads.csv 或 meta_ads.csv
     - CSV 欄位必須完全符合對應 template 的規格
 
     Example returned URL:
@@ -124,7 +124,7 @@ def download_csv_templates_from_gcs(types: List[str]) -> Tuple[bytes, str, str]:
             blob_path = CSV_TEMPLATE_BLOB_MAP[types[0]]
             blob = bucket.blob(blob_path)
             content = blob.download_as_bytes()
-            filename = f"{types[0]}_template.csv"
+            filename = f"{types[0]}.csv"
             return content, "text/csv", filename
 
         zip_buffer = io.BytesIO()
@@ -135,7 +135,7 @@ def download_csv_templates_from_gcs(types: List[str]) -> Tuple[bytes, str, str]:
                 blob_path = CSV_TEMPLATE_BLOB_MAP[t]
                 blob = bucket.blob(blob_path)
                 content = blob.download_as_bytes()
-                zf.writestr(f"{t}_template.csv", content)
+                zf.writestr(f"{t}.csv", content)
 
         zip_buffer.seek(0)
         return zip_buffer.read(), "application/zip", "csv_templates.zip"

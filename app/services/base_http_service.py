@@ -13,7 +13,7 @@ class BaseHTTPService:
     Now supports non-JSON payloads via overridable `prepare_request`.
     """
 
-    def __init__(self, base_url_env: str, default_base_url: str, timeout: float = 10.0):
+    def __init__(self, base_url_env: str, default_base_url: str, timeout: float = 60.0):
         self._base_url_env = base_url_env
         self._default_base_url = default_base_url
         self.timeout = timeout

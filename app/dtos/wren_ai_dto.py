@@ -337,3 +337,10 @@ class DownloadCsvTemplateRequestDTO(BaseModel):
     types: List[CsvTemplateType] = Field(
         ..., min_length=1, description="CSV template types to download"
     )
+
+
+class UpsertModelResponseDTO(BaseModel):
+    success_table_names: List[str]
+    dataset_id: str
+    status: str
+    success_count: int

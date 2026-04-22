@@ -12,7 +12,7 @@ from app.domain.exception.domain_exception import DomainException
 
 # ── 允許的檔名 ──────────────────────────────────────────────────────────────
 
-ALLOWED_FILENAMES = {"google_ads_template.csv", "meta_ads_template.csv"}
+ALLOWED_FILENAMES = {"google_ads.csv", "meta_ads.csv"}
 
 
 # ── Pydantic 行模型（同時作為欄位規格文件） ──────────────────────────────────
@@ -62,8 +62,8 @@ class MetaAdsRow(BaseModel):
 # ── 檔名 → schema 對應表 ─────────────────────────────────────────────────────
 
 _FILENAME_SCHEMA_MAP: dict[str, Type[BaseModel]] = {
-    "google_ads_template.csv": GoogleAdsRow,
-    "meta_ads_template.csv": MetaAdsRow,
+    "google_ads.csv": GoogleAdsRow,
+    "meta_ads.csv": MetaAdsRow,
 }
 
 
@@ -75,7 +75,7 @@ def validate_csv_file(filename: str, content_bytes: bytes) -> None:
     驗證 CSV 檔名與欄位是否符合規格。
 
     Args:
-        filename:      上傳的原始檔名（例如 "google_ads_template.csv"）
+        filename:      上傳的原始檔名（例如 "google_ads.csv"）
         content_bytes: CSV 檔案的原始位元組內容
 
     Raises:

@@ -1,7 +1,7 @@
 import logging
 import uuid
 from typing import Literal, Optional
-from fastapi import APIRouter, File, Query, Response, UploadFile
+from fastapi import APIRouter, File, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
@@ -26,6 +26,7 @@ from app.dtos.wren_ai_dto import (
     MessageListResponseDTO,
     ThreadListResponseDTO,
     ThreadReadDTO,
+    UpsertModelResponseDTO,
     WrenSetupResponseDTO,
 )
 from app.decorators.router_try import router_try
@@ -281,6 +282,23 @@ def download_csv_template_endpoint(
         media_type=content_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post(
+    "/si/{si_id}/org/{org_id}/upsert_model",
+    response_model=UpsertModelResponseDTO,
+)
+@router_try()
+async def upsert_model_endpoint(
+    si_id: int,
+    org_id: int,
+    request: Request,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+) -> UpsertModelResponseDTO:
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    return await service.upsert_model(db, user_info, si_id, org_id, token)
 
 
 @router.post(

@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.entities.chatbot_entity import ChatbotEntity
@@ -37,3 +38,11 @@ def upsert_chatbot(
     db.add(chatbot)
     db.flush()
     return chatbot, True
+
+
+def update_wren_models(db: Session, chatbot_id: int, models: List[str]) -> None:
+    chatbot = db.execute(
+        select(ChatbotEntity).where(ChatbotEntity.id == chatbot_id)
+    ).scalar_one()
+    chatbot.wren_models = models
+    db.flush()

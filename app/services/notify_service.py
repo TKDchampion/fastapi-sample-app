@@ -6,6 +6,8 @@ from app.dtos.notify_dto import (
     CreateAlertRequestDTO,
     CreateAlertResponseDTO,
     DeleteAlertResponseDTO,
+    SyncIngestionRequestDTO,
+    SyncIngestionResponseDTO,
 )
 from app.dtos.user_dto import UserReadDTO
 from app.services.base_http_service import BaseHTTPService
@@ -81,6 +83,19 @@ class NotifyService(BaseHTTPService):
             token=token,
         )
         return DeleteAlertResponseDTO(**data)
+
+    async def sync_ingestion(
+        self,
+        org_id: int,
+        body: SyncIngestionRequestDTO,
+        token: str,
+    ) -> SyncIngestionResponseDTO:
+        data = await self.post(
+            path=f"org/{org_id}/ingestion/sync",
+            payload=body.model_dump(),
+            token=token,
+        )
+        return SyncIngestionResponseDTO(**data)
 
 
 notify_service = NotifyService()

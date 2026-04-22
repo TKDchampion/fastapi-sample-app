@@ -36,6 +36,7 @@ from app.dtos.wren_ai_dto import (
     ThreadPageDTO,
     ThreadReadDTO,
     ThreadSummaryDTO,
+    UpsertModelResponseDTO,
     WrenCloudKeyResponseDTO,
     WrenCloudProjectResponseDTO,
     WrenSetupResponseDTO,
@@ -51,11 +52,21 @@ from app.repositories import (
     thread_repository,
 )
 from app.services.base_http_service import BaseHTTPService
+from app.dtos.notify_dto import SyncIngestionRequestDTO, SyncIngestionTableInfoDTO
 from app.services.gcs_uploader import download_csv_templates_from_gcs, upload_csv_to_gcs
 from app.services.permission_guard_service import verify_user_permission
 
 from google.cloud import bigquery
 import base64
+
+
+def _to_gs_uri(https_url: str) -> str:
+    """Convert https://storage.googleapis.com/{bucket}/{blob} to gs://{bucket}/{blob}."""
+    prefix = "https://storage.googleapis.com/"
+    if https_url.startswith(prefix):
+        return "gs://" + https_url[len(prefix) :]
+    return https_url
+
 
 raw = os.environ["BQ_SERVICE_ACCOUNT_KEY"]
 decoded = base64.b64decode(raw).decode("utf-8")
@@ -639,6 +650,43 @@ class WrenAiService(BaseHTTPService):
             tmpfile_path = tmpfile.name
 
         return FileResponse(tmpfile_path, media_type="text/csv", filename="result.csv")
+
+    async def upsert_model(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int, token: str
+    ) -> UpsertModelResponseDTO:
+        from app.services.notify_service import notify_service
+
+        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+        csvs = chatbot_csv_repository.get_latest_failed_csvs_by_chatbot_id(db, chatbot.id)
+
+        table_info = [
+            SyncIngestionTableInfoDTO(
+                table_name=os.path.splitext(csv.original_filename)[0],
+                gcs_uri=_to_gs_uri(csv.gcs_url),
+            )
+            for csv in csvs
+        ]
+
+        body = SyncIngestionRequestDTO(
+            table_info=table_info,
+            models=chatbot.wren_models or [],
+            project_name=chatbot.name,
+        )
+
+        print("SYNC_INGESTION_REQUEST_BODY:", body.json())
+
+        result = await notify_service.sync_ingestion(org_id=org_id, body=body, token=token)
+
+        # 成功：更新 chatbot.wren_models 與對應 CSV 的 is_success
+        chatbot_repository.update_wren_models(
+            db, chatbot.id, result.success_table_names
+        )
+        chatbot_csv_repository.mark_csvs_success(
+            db, chatbot.id, set(result.success_table_names)
+        )
+        db.commit()
+
+        return UpsertModelResponseDTO(**result.model_dump())
 
     async def setup_wren_for_org(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
