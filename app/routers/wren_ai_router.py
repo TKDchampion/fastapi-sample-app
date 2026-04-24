@@ -148,7 +148,7 @@ def get_artifact_endpoint(
     )
 
 
-@router.get("/si/{si_id}/org/{org_id}/chatbot", response_model=ChatbotReadDTO)
+@router.get("/si/{si_id}/org/{org_id}/chatbot", response_model=Optional[ChatbotReadDTO])
 @router_try()
 def get_chatbot_endpoint(
     si_id: int,

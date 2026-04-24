@@ -349,7 +349,7 @@ class WrenAiService(BaseHTTPService):
 
     def get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
-    ) -> ChatbotReadDTO:
+    ) -> Optional[ChatbotReadDTO]:
         verify_user_permission(
             db,
             user,
@@ -357,11 +357,7 @@ class WrenAiService(BaseHTTPService):
         )
         chatbot = chatbot_repository.get_chatbot_by_org_id(db, org_id)
         if not chatbot:
-            raise DomainException(
-                msg="WrenAI is not connected for this organization",
-                type="wren_ai_not_connected",
-                code=400,
-            )
+            return None
         return ChatbotReadDTO(id=chatbot.id, name=chatbot.name)
 
     def get_upload_csvs(
