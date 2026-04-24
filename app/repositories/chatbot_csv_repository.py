@@ -26,6 +26,14 @@ def get_latest_failed_csvs_by_chatbot_id(
         db.query(ChatbotCsvEntity)
         .join(subq, ChatbotCsvEntity.id == subq.c.max_id)
         .filter(ChatbotCsvEntity.is_success == False)
+    )
+
+
+def find_all_by_chatbot_id(db: Session, chatbot_id: int) -> List[ChatbotCsvEntity]:
+    return (
+        db.query(ChatbotCsvEntity)
+        .filter(ChatbotCsvEntity.chatbot_id == chatbot_id)
+        .order_by(ChatbotCsvEntity.created_at.desc())
         .all()
     )
 

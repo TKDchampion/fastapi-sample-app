@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 import uuid
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator, List, Optional
 from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     ArtifactSummaryDTO,
     AskRequestDTO,
+    ChatbotCsvReadDTO,
     CsvUploadResponseDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
@@ -349,8 +350,47 @@ class WrenAiService(BaseHTTPService):
     def get_chatbot(
         self, db: Session, user: UserReadDTO, si_id: int, org_id: int
     ) -> ChatbotReadDTO:
-        chatbot = self._verify_and_get_chatbot(db, user, si_id, org_id)
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="pass"),
+        )
+        chatbot = chatbot_repository.get_chatbot_by_org_id(db, org_id)
+        if not chatbot:
+            raise DomainException(
+                msg="WrenAI is not connected for this organization",
+                type="wren_ai_not_connected",
+                code=400,
+            )
         return ChatbotReadDTO(id=chatbot.id, name=chatbot.name)
+
+    def get_upload_csvs(
+        self, db: Session, user: UserReadDTO, si_id: int, org_id: int
+    ) -> List[ChatbotCsvReadDTO]:
+        verify_user_permission(
+            db,
+            user,
+            PermissionCheckParams(si_id=si_id, org_id=org_id, perm="business.chatbot"),
+        )
+        chatbot = chatbot_repository.get_chatbot_by_org_id(db, org_id)
+        if not chatbot:
+            raise DomainException(
+                msg="此組織尚未串接 WrenAI，請聯繫管理員進行設定",
+                type="wren_ai_not_connected",
+                code=404,
+            )
+        records = chatbot_csv_repository.find_all_by_chatbot_id(db, chatbot.id)
+        return [
+            ChatbotCsvReadDTO(
+                id=r.id,
+                chatbot_id=r.chatbot_id,
+                gcs_url=r.gcs_url,
+                original_filename=r.original_filename,
+                created_at=r.created_at,
+                is_success=r.is_success,
+            )
+            for r in records
+        ]
 
     async def generate_sql(
         self, endpoint: str, req: GenerateSQLRequestDTO, db: Session, user: UserReadDTO

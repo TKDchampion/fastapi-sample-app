@@ -7,10 +7,12 @@ from fastapi.params import Depends
 from fastapi.responses import StreamingResponse
 from app.database import get_db
 from app.dtos.user_dto import UserReadDTO
+from typing import List
 from app.dtos.wren_ai_dto import (
     ArtifactReadDTO,
     AskRequestDTO,
     AskResponse,
+    ChatbotCsvReadDTO,
     CsvUploadResponseDTO,
     ChatbotReadDTO,
     ChartRequestDTO,
@@ -156,6 +158,20 @@ def get_chatbot_endpoint(
     db: Session = Depends(get_db),
 ):
     return service.get_chatbot(db, user_info, si_id, org_id)
+
+
+@router.get(
+    "/si/{si_id}/org/{org_id}/upload_csv", response_model=List[ChatbotCsvReadDTO]
+)
+@router_try()
+def get_upload_csvs_endpoint(
+    si_id: int,
+    org_id: int,
+    service: WrenAiService = Depends(WrenAiService),
+    user_info: UserReadDTO = Depends(token_required),
+    db: Session = Depends(get_db),
+):
+    return service.get_upload_csvs(db, user_info, si_id, org_id)
 
 
 @router.post("/generatesql", response_model=GenerateSQLResponseDTO)
