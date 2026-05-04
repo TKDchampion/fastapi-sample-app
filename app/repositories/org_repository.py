@@ -30,7 +30,7 @@ def get_orgs_by_sid(db: Session, si_id: int):
                 OrganizationEntity.contract_end,
                 OrganizationEntity.created_at,
                 OrganizationEntity.updated_at,
-                (ChatbotEntity.id != None).label("is_connect_wren_ai"),
+                (ChatbotEntity.id != None).label("is_ai_chatbot_db_connected"),
             )
             .outerjoin(ChatbotEntity, ChatbotEntity.org_id == OrganizationEntity.id)
             .where(OrganizationEntity.si_id == si_id)
@@ -52,7 +52,7 @@ def get_orgs_by_sid_oids(db: Session, si_id: int, ids: list[int]):
                 OrganizationEntity.contract_end,
                 OrganizationEntity.created_at,
                 OrganizationEntity.updated_at,
-                (ChatbotEntity.id != None).label("is_connect_wren_ai"),
+                (ChatbotEntity.id != None).label("is_ai_chatbot_db_connected"),
             )
             .outerjoin(ChatbotEntity, ChatbotEntity.org_id == OrganizationEntity.id)
             .where(
@@ -198,4 +198,6 @@ def get_org_business_modules(db: Session, org_id: int) -> List[BusinessModuleIte
         .where(org_business_modules.c.org_id == org_id)
     )
     rows = db.execute(q).all()
-    return [BusinessModuleItemDTO(id=row.id, key=row.key, name=row.name) for row in rows]
+    return [
+        BusinessModuleItemDTO(id=row.id, key=row.key, name=row.name) for row in rows
+    ]
