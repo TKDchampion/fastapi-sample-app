@@ -5,6 +5,7 @@ from app.dtos.org_dto import OrgUpsertParamDTO
 from app.dtos.report_dto import BusinessModuleItemDTO
 from app.entities.organization_entity import OrganizationEntity
 from app.entities.business_module_entity import BusinessModuleEntity
+from app.entities.chatbot_entity import ChatbotEntity
 from app.entities.associations_entity import (
     user_roles as user_roles_table,
     org_business_modules,
@@ -29,7 +30,10 @@ def get_orgs_by_sid(db: Session, si_id: int):
                 OrganizationEntity.contract_end,
                 OrganizationEntity.created_at,
                 OrganizationEntity.updated_at,
-            ).where(OrganizationEntity.si_id == si_id)
+                (ChatbotEntity.id != None).label("is_connect_wren_ai"),
+            )
+            .outerjoin(ChatbotEntity, ChatbotEntity.org_id == OrganizationEntity.id)
+            .where(OrganizationEntity.si_id == si_id)
         )
         .mappings()
         .all()
@@ -48,7 +52,10 @@ def get_orgs_by_sid_oids(db: Session, si_id: int, ids: list[int]):
                 OrganizationEntity.contract_end,
                 OrganizationEntity.created_at,
                 OrganizationEntity.updated_at,
-            ).where(
+                (ChatbotEntity.id != None).label("is_connect_wren_ai"),
+            )
+            .outerjoin(ChatbotEntity, ChatbotEntity.org_id == OrganizationEntity.id)
+            .where(
                 OrganizationEntity.si_id == si_id,
                 OrganizationEntity.id.in_(ids),
             )

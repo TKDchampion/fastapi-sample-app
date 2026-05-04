@@ -38,6 +38,7 @@ class OrgListItemDTO(DateOnlySerializerMixin, BaseModel):
     contract_end: DateLikeDatetime
     created_at: datetime
     updated_at: datetime
+    is_connect_wren_ai: bool = False
 
 
 class OrgListResponseDTO(BaseModel):
